@@ -5,12 +5,13 @@ Użycie:
     python mods/smooth_scroll/apply.py WEJŚCIE.EXE WYJŚCIE.EXE
 
 Wymaga nasm. Zmiany (adresy seg:off w obrazie programu):
-  01DC:116A-145E  nowy kod: kamera, rysowanie tła, rysowanie kafli
-                  pierwszego planu z przycinaniem (seg01dc.asm)
-  01DC:145F       call camera / jmp 14F5 (zamiast kroków po 16 px)
-  01DC:1502       jmp redraw (zamiast składania z bufora pierścieniowego)
+  01DC:116A-145E  rysowanie tła i kafli pierwszego planu (seg01dc.asm, sekcja A)
+  01DC:145F-14F4  call camera / jmp 14F5, przesuwanie tła o 0-7 px (sekcja B)
+  01DC:1502-1626  jmp redraw, kamera (sekcja C)
   003A:0C15-0DEF  lista kafli pierwszego planu (seg003a.asm)
   0351:19CB       lcall 01DC:fgblit zamiast 0B8F:0008
+  0B8F:0152       retf: koniec zapisu kafli do bufora pierścieniowego VRAM 4000h
+                  (ten obszar służy teraz do składania tła)
 Relokacje leżące w nadpisanych obszarach są przekierowane na nieużywane
 słowo w nowym kodzie, inaczej loader DOS zmieniłby bajty nowego kodu.
 """
@@ -30,7 +31,11 @@ EXPECT = {
     (0x01DC, 0x116A): bytes.fromhex('558bec83ec08'),
     (0x003A, 0x0C15): bytes.fromhex('558bec83ec1e'),
     (0x0351, 0x19CB): bytes.fromhex('9a08008f0b'),
+    (0x0B8F, 0x0152): bytes.fromhex('5053515257'),
 }
+
+# sekcje seg01dc.asm: plik wynikowy odwzorowuje 01DC:116A-1626
+SECTIONS_01DC = [(0x116A, 0x145F), (0x145F, 0x14F5), (0x1502, 0x1627)]
 
 
 def assemble(name):
@@ -48,7 +53,7 @@ def assemble(name):
             code = f.read()
         with open(mapf) as f:
             syms = {m.group(2): int(m.group(1), 16)
-                    for m in re.finditer(r'^\s*([0-9A-Fa-f]+)\s+[0-9A-Fa-f]+\s+(\S+)\s*$', f.read(), re.M)}
+                    for m in re.finditer(r'^\s*[0-9A-Fa-f]+\s+([0-9A-Fa-f]+)\s+(\S+)\s*$', f.read(), re.M)}
     return code, syms
 
 
@@ -73,19 +78,12 @@ def main():
     c03a, _ = assemble('seg003a.asm')
 
     patches = []   # (seg, off, bytes)
-    patches.append((0x01DC, 0x116A, c1dc + b'\x90' * (0x145F - 0x116A - len(c1dc))))
-    # 145F: call camera / jmp 14F5 (oba near)
-    call = s1dc['camera'] - (0x145F + 3)
-    jmp = 0x14F5 - (0x1462 + 3)
-    stub = b'\xe8' + struct.pack('<h', call) + b'\xe9' + struct.pack('<h', jmp)
-    patches.append((0x01DC, 0x145F, stub + b'\x90' * (0x14F5 - 0x145F - len(stub))))
-    # 1502: jmp near redraw
-    jmpn = s1dc['redraw'] - (0x1502 + 3)
-    stub = b'\xe9' + struct.pack('<h', jmpn)
-    patches.append((0x01DC, 0x1502, stub + b'\x90' * (0x1627 - 0x1502 - len(stub))))
+    for a, b in SECTIONS_01DC:
+        patches.append((0x01DC, a, c1dc[a - 0x116A:b - 0x116A]))
     patches.append((0x003A, 0x0C15, c03a + b'\x90' * (0x0DF0 - 0x0C15 - len(c03a))))
     # 0351:19CB: lcall 01DC:fgblit (słowo segmentu ma już relokację)
     patches.append((0x0351, 0x19CB, b'\x9a' + struct.pack('<HH', s1dc['fgblit'], 0x01DC)))
+    patches.append((0x0B8F, 0x0152, b'\xcb'))
 
     # relokacje w nadpisanych obszarach (poza słowem segmentu lcall w 0351:19CB)
     keep = {lin(0x0351, 0x19CB + 3) - base}
@@ -105,10 +103,10 @@ def main():
 
     with open(dst, 'wb') as f:
         f.write(data)
-    print(f'01DC: {len(c1dc)} B, '
-          f'003A: {len(c03a)} B, '
+    used = ', '.join(f'{a:04X}: {len(c1dc[a - 0x116A:b - 0x116A].rstrip(bytes([0x90])))}/{b - a} B'
+                     for a, b in SECTIONS_01DC)
+    print(f'01DC {used}; 003A: {len(c03a.rstrip(bytes([0x90])))}/{0x0DF0 - 0x0C15} B; '
           f'przekierowane relokacje: {moved}')
-    print('symbole:', {k: hex(v) for k, v in s1dc.items() if k in ('camera', 'redraw', 'fgblit', 'reloc_scratch')})
 
 
 if __name__ == '__main__':
