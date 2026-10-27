@@ -1,0 +1,12 @@
+# oryginalna gra - nie publikować
+/original/
+*.zip
+/The-Blues-Brothers_DOS_EN.zip
+# pliki generowane
+/build/
+/work/
+/patches/dist/
+/tests/results/*/capture/
+__pycache__/
+*.pyc
+.DS_Store

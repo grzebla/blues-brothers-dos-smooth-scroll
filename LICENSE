@@ -1,0 +1,51 @@
+Polonizacja "The Blues Brothers" (MS-DOS) - informacje licencyjne
+=================================================================
+
+1. Narzędzia i skrypty (katalogi tools/, tests/, w tym apply_patch.py i bbformats.py)
+
+MIT License
+
+Copyright (c) 2026 autorzy projektu blues-brothers-pl
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+2. Tłumaczenie i polskie grafiki (localization/pl/)
+
+Teksty tłumaczenia, fonty JSON i polskie warianty napisów udostępniane są na
+licencji Creative Commons Uznanie autorstwa 4.0 (CC BY 4.0).
+
+3. Gra
+
+"The Blues Brothers" (c) 1991 Titus Interactive. Gra, jej kod i oryginalne
+grafiki NIE są częścią tego projektu ani patcha. Patch zawiera wyłącznie
+zmienione bajty tekstów oraz zmienione piksele (polskie napisy) i wymaga
+legalnie posiadanej kopii gry. Pliki RUNME.COM, HARD.COM, INTRO.EXE, JOHN.SQZ,
+OH.SQZ i TERRY.SQZ pochodzą od grup TDT/TRSI (wydanie "crack").
+
+4. Materiały referencyjne
+
+- Projekt cyxx/blues (https://github.com/cyxx/blues) posłużył wyłącznie jako
+  materiał referencyjny do zrozumienia formatów (repozytorium nie zawiera
+  pliku licencji, dlatego żaden jego kod nie został skopiowany - wszystkie
+  narzędzia zostały napisane od nowa).
+- Kształty liter dużych napisów (ekran "WŁÓŻ DYSK II", sprite "KONIEC GRY")
+  zostały jednorazowo wyrenderowane z krojów systemowych macOS (Superclarendon
+  Black, Chalkboard SE Bold) do masek PNG w localization/pl/graphics/masks/.
+  Patch nie zawiera plików krojów.
+- DOSBox-X (GPL-2.0) jest używany wyłącznie do testów, nie jest dystrybuowany.
