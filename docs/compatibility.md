@@ -52,20 +52,22 @@ ani w patchu):
 | `insert_disk` | ekran zmiany dyskietki (brak AVTMAG.SQV) | **zaliczony** | ✔ polski ekran "WŁÓŻ DYSK II" — zgodność 1.000 w t=20.545920000000002 s |
 | `runme_ega` | opcja [1] EGA - porównanie z oryginałem | **zaliczony** | ✔ oryginał i wersja PL uruchamiają te same programy — oryginał: ['hard'], PL: ['hard']<br>✔ komunikat po wyjściu przetłumaczony (zrzut: runme_exit_message.png) |
 | `console` | komunikaty konsolowe (RUNME, CGA, brak pamięci [łatka testowa]) | **zaliczony** | ✔ konsola RUNME: runme.line_presents — 'P R Z E D S T A W I A'<br>✔ konsola RUNME: runme.line_title — 'Blues Brothers firmy TITUS'<br>✔ konsola RUNME: runme.line_intro — '[3] - Intro TDT/TRSI...'<br>✔ konsola RUNME: runme.exit_message — 'Kto inny da wam takie rzeczy?'<br>✔ 1.EXE na karcie CGA: 'BRAK EGA/VGA.' — BRAK EGA/VGA.; C:\>exit<br>✔ komunikat nr 1 z tablicy (brak pamięci): 'BRAK RAM-U.' — BRAK RAM-U.; C:\>exit |
-| `demo_regression` | regresja: tryb demo oryginał vs PL, klatka po klatce | **zaliczony** | ✔ wszystkie różnice wynikają z lokalizacji (tekst, napisy, neony) — niewyjaśnione: []<br>✔ większość klatek identyczna z oryginałem — 187/390 |
+| `demo_regression` | regresja: tryb demo oryginał vs PL (build `--classic-scroll`), klatka po klatce | **zaliczony** | ✔ wszystkie różnice wynikają z lokalizacji (tekst, napisy, neony) — niewyjaśnione: []<br>✔ większość klatek identyczna z oryginałem — 187/390 |
+| `smooth_scroll` | płynne przewijanie: demo poziomu 1 z wersją PL | **zaliczony** | ✔ kamera przesuwa się w poziomie — 201 zmian<br>✔ przesunięcia co piksel (nie tylko wielokrotności 8) — wartości: [-6, -5, -4, -3, -2, -1]<br>✔ brak skoków powyżej 16 px na klatkę — max \|dx\| = 6 |
 | `polish_glyphs` | wszystkie polskie wielkie litery w grze (pangram) | **zaliczony** | ✔ pangram 'ZAŻÓŁĆ GĘŚLĄ' / 'JAŹŃ ĄĆĘŁŃÓŚŹŻ' wyświetlony w grze — zgodność 1.000, t=30.861684 s |
 | `direct_exe` | bezpośrednie uruchomienie 1.EXE | **zaliczony** | ✔ 1.EXE uruchomione bezpośrednio pokazuje polski ekran wyboru — zgodność 1.000, t=28.050888 s |
 
 Dodatkowo porównano dźwięk nagrany w scenariuszu regresji dema: korelacja
 obwiedni głośności ścieżek oryginału i wersji PL wynosi 0,988 (przesunięcie
 50 ms wynika z niezsynchronizowanego startu nagrań), RMS 6419 vs 6423 -
-muzyka i efekty nie zostały naruszone (pliki dźwiękowe i kod nie są zmieniane).
+muzyka i efekty nie zostały naruszone (pliki dźwiękowe i kod dźwięku nie są zmieniane).
 
 Regresja dema: 390 próbek co 0,25 s; 187 klatek identycznych bit w bit,
 pozostałe różnią się wyłącznie w zlokalizowanych miejscach (menu tekstowe,
 pasek wyboru, szyldy mapy, neony poziomu 1), fazą animacji palety (różnica
 tylko w kanale B) lub w 1 klatce wygaszania. Pozycje postaci, przeciwników
-i przebieg dema są identyczne.
+i przebieg dema są identyczne. Dotyczy to wersji z klasycznym przewijaniem;
+z płynnym przewijaniem demo rozjeżdża się po ok. 60 s (patrz punkt 10 niżej).
 
 Pełny raport: `tests/results/latest/report.md`, arkusze klatek
 i zrzuty: `tests/results/latest/*.png`.
@@ -103,14 +105,22 @@ odmowa dla obcego pliku, brak plików gry w paczce).
    (wersja dyskietkowa). Litery zostały odtworzone krojem Superclarendon
    z proceduralnym stylem grawerowanym (podobnym, ale nie identycznym
    z ręcznie rysowanym oryginałem).
-7. **Prawdziwy sprzęt** nie był testowany. Ryzyko jest małe: kod gry nie jest
-   zmieniany (poza 40 bajtami danych komunikatów), a wszystkie zasoby
-   mieszczą się w limitach buforów wyznaczonych z kodu (docs/analysis.md).
+7. **Prawdziwy sprzęt** nie był testowany. Zasoby mieszczą się w limitach
+   buforów wyznaczonych z kodu (docs/analysis.md). Kod przewijania jest
+   zmieniony (mods/smooth_scroll): na wolnym 286 gra działałaby wolniej niż
+   oryginał, bo przesunięcie tła o 0-7 px liczy procesor.
 8. Kompresja zasobów różni się bajtowo od oryginału (inne drzewo Huffmana),
    ale po dekompresji dane są identyczne co do piksela poza napisami;
    rozmiary plików są zbliżone lub mniejsze.
 9. Cracktro (`INTRO.EXE`, opcja `[3]`) nie jest tłumaczone - to dodatek grupy
    crackerskiej, nie część gry.
+10. **Płynne przewijanie** (domyślnie włączone) zmienia moment aktywacji
+    przeciwników, więc dema rozjeżdżają się z oryginałem. Regresja dema
+    (`demo_regression`) porównuje dlatego oryginał z buildem
+    `--classic-scroll`, a płynność sprawdza scenariusz `smooth_scroll`.
+    W DOSBox potrzebne jest ok. `cycles=12000` (oryginał ma podobny próg).
+11. **Menu RUNME**: linie nagłówka są wyśrodkowane wcięciem z tabulatorów
+    (długość linii w `RUNME.COM` jest stała, a DOS rozwija TAB do 8 kolumn).
 
 ## Lista kontrolna ręcznej weryfikacji
 

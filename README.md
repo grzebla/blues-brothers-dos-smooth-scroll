@@ -1,8 +1,9 @@
 # The Blues Brothers (1991, MS-DOS) — polska wersja językowa
 
 Polonizacja oryginalnej gry Titus Interactive na DOS. Modyfikowane są
-wyłącznie oryginalne pliki gry (grafiki z napisami oraz teksty w plikach
-wykonywalnych) — silnik, rozgrywka, poziomy i dźwięk pozostają bez zmian.
+wyłącznie oryginalne pliki gry: grafiki z napisami, teksty w plikach
+wykonywalnych oraz kod przewijania ekranu w `1.EXE` (płynne przewijanie,
+patrz niżej). Poziomy, sterowanie i dźwięk pozostają bez zmian.
 Gra po spolszczeniu działa jako zwykła aplikacja DOS (sprawdzone w DOSBox-X).
 
 ![Pasek wyboru postaci w grze](docs/img/choix_ingame.png)
@@ -27,6 +28,22 @@ Bez zmian (świadomie): nazwy własne (The Blues Brothers, Jake, Elwood,
 Titus), graffiti, skrót HI-FI, tabliczka OPEN (brak miejsca — oznaczona do
 weryfikacji). Pełna lista: [`localization/pl/strings.json`](localization/pl/strings.json).
 
+## Płynne przewijanie
+
+Oryginał przewija planszę skokami po 16 px: gdy postać dojdzie do krawędzi,
+ekran „dojeżdża” o pół szerokości. Polska wersja ma domyślnie płynne
+przewijanie: kamera podąża za postacią co 1 piksel w obu osiach. Kod
+(asembler x86) i opis są w [`mods/smooth_scroll/`](mods/smooth_scroll/README.md).
+
+Skutki uboczne:
+
+- **Moment pojawiania się przeciwników** może się nieco różnić od oryginału,
+  bo przeciwnicy budzą się względem kamery. Dlatego dema (tryb demo w menu)
+  po pewnym czasie przestają odtwarzać się tak jak w oryginale.
+- **Wymagania CPU w DOSBox.** Pełne ~23 klatki/s są od ok. `cycles=12000`
+  (oryginał ma podobny próg). Przy domyślnych 3000 gra jest zbyt wolna,
+  także w oryginale.
+
 ## Instalacja dla graczy (patch)
 
 Potrzebne: legalna kopia obsługiwanego wydania (angielska wersja DOS na dysk
@@ -39,13 +56,15 @@ python apply_patch.py C:\GRY\BLUES --restore
 ```
 
 Instalator sprawdza SHA-256 każdego pliku, odmawia pracy z inną wersją,
-kopiuje oryginały do `KOPIA_EN\`. Patch (ok. 18 KB) zawiera tylko zmienione
+kopiuje oryginały do `KOPIA_EN\`. Patch (ok. 20 KB) zawiera tylko zmienione
 bajty i piksele — żadnych plików gry. Uruchomienie: `RUNME` → `[2] - VGA`
-albo bezpośrednio `1.EXE`. Szczegóły zgodności: [docs/compatibility.md](docs/compatibility.md).
+albo bezpośrednio `1.EXE`. W DOSBox ustaw `cycles=12000` lub więcej (np.
+`dosbox-x -set "cpu cycles=12000"`). Szczegóły zgodności: [docs/compatibility.md](docs/compatibility.md).
 
 ## Budowanie polskiej wersji (dla twórców)
 
-Wymagania: Python 3.8+, Pillow, numpy. Do testów: DOSBox-X, a do
+Wymagania: Python 3.8+, Pillow, numpy, asembler nasm (płynne przewijanie,
+np. `brew install nasm`). Do testów: DOSBox-X, a do
 generowania masek dużych napisów — kroje systemowe macOS (opcjonalnie).
 
 ```sh

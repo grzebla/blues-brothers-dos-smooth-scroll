@@ -57,11 +57,12 @@ def assemble(name):
     return code, syms
 
 
-def main():
-    if len(sys.argv) != 3:
-        sys.exit(__doc__)
-    src, dst = sys.argv[1:]
-    data = bytearray(open(src, 'rb').read())
+class ModError(Exception):
+    pass
+
+
+def apply_smooth_scroll(data):
+    """Nakłada mod na obraz 1.EXE (bytearray, zmieniany w miejscu). Zwraca opis zmian."""
     hdr = struct.unpack_from('<14H', data)
     nrel, hpar, relo = hdr[3], hdr[4], hdr[12]
     base = hpar * 16
@@ -72,7 +73,8 @@ def main():
     for (seg, off), want in EXPECT.items():
         got = bytes(data[lin(seg, off):lin(seg, off) + len(want)])
         if got != want:
-            sys.exit(f'{seg:04X}:{off:04X}: nieoczekiwane bajty {got.hex()} (oczekiwano {want.hex()}) - inna wersja 1.EXE?')
+            raise ModError(f'{seg:04X}:{off:04X}: nieoczekiwane bajty {got.hex()} '
+                           f'(oczekiwano {want.hex()}) - inna wersja 1.EXE?')
 
     c1dc, s1dc = assemble('seg01dc.asm')
     c03a, _ = assemble('seg003a.asm')
@@ -80,7 +82,7 @@ def main():
     patches = []   # (seg, off, bytes)
     for a, b in SECTIONS_01DC:
         patches.append((0x01DC, a, c1dc[a - 0x116A:b - 0x116A]))
-    patches.append((0x003A, 0x0C15, c03a + b'\x90' * (0x0DF0 - 0x0C15 - len(c03a))))
+    patches.append((0x003A, 0x0C15, c03a))
     # 0351:19CB: lcall 01DC:fgblit (słowo segmentu ma już relokację)
     patches.append((0x0351, 0x19CB, b'\x9a' + struct.pack('<HH', s1dc['fgblit'], 0x01DC)))
     patches.append((0x0B8F, 0x0152, b'\xcb'))
@@ -101,12 +103,24 @@ def main():
     for seg, off, b in patches:
         data[lin(seg, off):lin(seg, off) + len(b)] = b
 
-    with open(dst, 'wb') as f:
-        f.write(data)
     used = ', '.join(f'{a:04X}: {len(c1dc[a - 0x116A:b - 0x116A].rstrip(bytes([0x90])))}/{b - a} B'
                      for a, b in SECTIONS_01DC)
-    print(f'01DC {used}; 003A: {len(c03a.rstrip(bytes([0x90])))}/{0x0DF0 - 0x0C15} B; '
-          f'przekierowane relokacje: {moved}')
+    return (f'płynne przewijanie: kod 01DC {used}; 003A: {len(c03a.rstrip(bytes([0x90])))}/{0x0DF0 - 0x0C15} B; '
+            f'przekierowane relokacje: {moved}')
+
+
+def main():
+    if len(sys.argv) != 3:
+        sys.exit(__doc__)
+    src, dst = sys.argv[1:]
+    data = bytearray(open(src, 'rb').read())
+    try:
+        info = apply_smooth_scroll(data)
+    except ModError as e:
+        sys.exit(f'BŁĄD: {e}')
+    with open(dst, 'wb') as f:
+        f.write(data)
+    print(info)
 
 
 if __name__ == '__main__':

@@ -7,7 +7,8 @@ Użycie:
 Kroki:
   1. weryfikacja kompletności i wersji gry (SHA-256 wszystkich plików),
   2. kopia oryginalnych plików do <output>/game (katalog original/ nie jest zmieniany),
-  3. import polskich tekstów do 1.EXE i RUNME.COM (tools/patch_exe.py),
+  3. import polskich tekstów do 1.EXE i RUNME.COM (tools/patch_exe.py)
+     i płynne przewijanie w 1.EXE (mods/smooth_scroll, wymaga nasm),
   4. (z --render) wygenerowanie grafik z tłumaczeń (tools/make_graphics.py),
   5. zakodowanie zmodyfikowanych grafik (tools/import.py),
   6. zapis gotowej polskiej wersji gry,
@@ -39,6 +40,15 @@ def load_module(name, filename):
 
 
 importer = load_module('bb_import', 'import.py')
+ROOT = os.path.dirname(TOOLS)
+
+
+def load_smooth_scroll():
+    spec = importlib.util.spec_from_file_location(
+        'bb_smooth_scroll', os.path.join(ROOT, 'mods', 'smooth_scroll', 'apply.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def sha(data):
@@ -95,6 +105,8 @@ def main():
     ap.add_argument('--output', default='build')
     ap.add_argument('--render', action='store_true', help='wygeneruj grafiki z tłumaczeń przed importem')
     ap.add_argument('--force', action='store_true', help='nie przerywaj przy niezgodnej wersji (niezalecane)')
+    ap.add_argument('--classic-scroll', action='store_true',
+                    help=argparse.SUPPRESS)  # tylko testy: oryginalne przewijanie (regresja dema)
     args = ap.parse_args()
     src = os.path.normpath(args.source)
     out = os.path.normpath(args.output)
@@ -117,9 +129,18 @@ def main():
         with open(os.path.join(game, name), 'wb') as f:
             f.write(data)
 
-    print('[3/8] Import tekstów (1.EXE, RUNME.COM)')
+    print('[3/8] Import tekstów (1.EXE, RUNME.COM) i płynne przewijanie')
     spec = patch_exe.build_spec(args.locale)
     exe_files = patch_exe.apply_spec(src, spec)
+    if not args.classic_scroll:
+        exe = bytearray(exe_files.get('1.EXE') or open(gd.find_file(src, '1.EXE'), 'rb').read())
+        try:
+            report.append(load_smooth_scroll().apply_smooth_scroll(exe))
+        except FileNotFoundError:
+            raise SystemExit('BŁĄD: brak asemblera nasm (potrzebny do płynnego przewijania), np. brew install nasm')
+        exe_files['1.EXE'] = bytes(exe)
+    else:
+        report.append('płynne przewijanie: wyłączone (--classic-scroll)')
 
     if args.render:
         print('[4/8] Generowanie grafik z tłumaczeń')

@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import time
 
@@ -33,6 +34,7 @@ import bbformats as bf  # noqa: E402
 import dosbox_harness as H  # noqa: E402
 import gamedata as gd  # noqa: E402
 import test_patches as TP  # noqa: E402
+import zmbv  # noqa: E402
 from numpy.lib.stride_tricks import sliding_window_view  # noqa: E402
 
 LOC = os.path.join(ROOT, 'localization', 'pl', 'graphics')
@@ -362,11 +364,75 @@ def scenario_console(args, work):
     return r
 
 
+def classic_scroll_build(work):
+    """Wersja PL z oryginalnym przewijaniem (build --classic-scroll).
+
+    Płynne przewijanie zmienia moment aktywacji przeciwników, więc dema
+    (zapisane wejście) rozjeżdżają się z oryginałem; regresja lokalizacji
+    porównuje więc oryginał z polską wersją bez tego modu."""
+    out = os.path.join(work, 'build_classic')
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'build.py'), '--source', ORIG, '--locale', 'pl',
+                    '--output', out, '--classic-scroll'], check=True, stdout=subprocess.DEVNULL)
+    return os.path.join(out, 'game')
+
+
+def camera_shifts(rec, t0=None, t1=None):
+    """Przesunięcia obrazu planszy między kolejnymi klatkami (korelacja fazowa, piksele gry)."""
+    out = []
+    prev = None
+    for avi in rec.avis:
+        if not os.path.basename(avi).startswith('1_'):
+            continue
+        info, chunks = zmbv.avi_info_and_frames(avi)
+        fps = info['fps'] or 70.0
+        dec = zmbv.ZMBVDecoder(info['width'], info['height'])
+        for i, c in enumerate(chunks):
+            t = i / fps
+            f = dec.decode(c)
+            if (t0 is not None and t < t0) or (t1 is not None and t > t1):
+                prev = None
+                continue
+            g = zmbv.to_rgb(f, dec.palette)[28:316:2, ::2].astype(np.int32)   # plansza 320x144
+            g = g[..., 0] * 65536 + g[..., 1] * 256 + g[..., 2]
+            if prev is not None and (g != prev).mean() > 0.05:
+                a = prev - prev.mean()
+                b = g - g.mean()
+                R = np.fft.fft2(a) * np.conj(np.fft.fft2(b))
+                R /= np.abs(R) + 1e-9
+                cc = np.abs(np.fft.ifft2(R))
+                dy, dx = np.unravel_index(cc.argmax(), cc.shape)
+                if dy > cc.shape[0] // 2:
+                    dy -= cc.shape[0]
+                if dx > cc.shape[1] // 2:
+                    dx -= cc.shape[1]
+                if dx or dy:
+                    out.append((round(t, 2), int(-dx), int(-dy)))
+            prev = g
+    return out
+
+
+def scenario_smooth_scroll(args, work):
+    """Płynne przewijanie: demo poziomu 1 - kamera co piksel, bez skoków o pół ekranu."""
+    r = Result('smooth_scroll')
+    game = prepare_game(args.game, os.path.join(work, 'game_smooth'))
+    rec = H.run(game, os.path.join(work, 'smooth'), keys='2', seconds=75, wait=3, pace=1)
+    shifts = [s for s in camera_shifts(rec, 55, 70)]
+    dxs = [dx for t, dx, dy in shifts if dx]
+    r.notes.append('przesunięcia poziome (px): %s' % sorted(set(dxs)))
+    r.check('kamera przesuwa się w poziomie', len(dxs) >= 50, '%d zmian' % len(dxs))
+    r.check('przesunięcia co piksel (nie tylko wielokrotności 8)', any(dx % 8 for dx in dxs),
+            'wartości: %s' % sorted(set(dxs))[:12])
+    r.check('brak skoków powyżej 16 px na klatkę', all(abs(dx) <= 16 and abs(dy) <= 16 for t, dx, dy in shifts),
+            'max |dx| = %d' % max([abs(d) for d in dxs] or [0]))
+    rec.sheet(os.path.join(args.out, 'smooth_scroll.png'), step=3.0)
+    return r
+
+
 def scenario_demo_regression(args, work, seconds=100):
-    """Regresja: tryb demo (zapisane wejście DEMO*.BIN) - oryginał vs PL klatka po klatce."""
+    """Regresja: tryb demo (zapisane wejście DEMO*.BIN) - oryginał vs PL (klasyczne przewijanie) klatka po klatce."""
     r = Result('demo_regression')
     recs = {}
-    for tag, src in (('o', ORIG), ('p', args.game)):
+    for tag, src in (('o', ORIG), ('p', classic_scroll_build(work))):
         game = prepare_game(src, os.path.join(work, 'game_demo_' + tag))
         recs[tag] = H.run(game, os.path.join(work, 'demo_' + tag), keys='2', seconds=seconds, wait=3, pace=1)
     P = [(t, f[::2, ::2].copy()) for t, n, f in recs['p'].frames(0.25)]
@@ -500,6 +566,7 @@ SCENARIOS = {
     'runme_ega': scenario_ega,
     'console': scenario_console,
     'demo_regression': scenario_demo_regression,
+    'smooth_scroll': scenario_smooth_scroll,
     'polish_glyphs': scenario_polish_glyphs,
     'direct_exe': scenario_direct,
 }

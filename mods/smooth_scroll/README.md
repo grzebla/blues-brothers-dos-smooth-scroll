@@ -10,12 +10,17 @@ kamerę tak, żeby podążała za postacią na bieżąco:
 - **pionowo** przesuwa się co 1 px. Martwa strefa to y 88–136;
 - ruch kamery jest ograniczony do 16 px na klatkę, tak jak w oryginale.
 
-Mod jest niezależny od polonizacji, ale nakłada się na `1.EXE` po niej
-(sprawdza bajty tylko w miejscach, które zmienia).
+Płynne przewijanie jest częścią polskiej wersji: `tools/build.py` nakłada je
+zawsze, a patch dla graczy zawiera zmienione bajty. Przełącznik
+`--classic-scroll` służy wyłącznie testom (regresja dema). Mod można też
+nałożyć osobno, np. na 1.EXE wersji angielskiej (sprawdza bajty tylko
+w miejscach, które zmienia):
 
 ```sh
-python3 mods/smooth_scroll/apply.py build/game/1.EXE work/smooth/1.EXE   # wymaga nasm
+python3 mods/smooth_scroll/apply.py WEJŚCIE.EXE WYJŚCIE.EXE   # wymaga nasm
 ```
+
+Test w DOSBox-X: `python3 tests/run_dosbox_tests.py --only smooth_scroll`.
 
 ## Jak to działa
 

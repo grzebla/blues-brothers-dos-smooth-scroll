@@ -118,6 +118,14 @@ INSTALACJA
        python apply_patch.py C:\\GRY\\BLUES
    (podaj katalog z plikiem 1.EXE). Sprawdzenie bez zmian: --check
 4. Uruchom grę (np. w DOSBox): RUNME, a w menu wybierz [2] - VGA.
+   W DOSBox ustaw cycles=12000 lub więcej (przy domyślnych 3000 gra jest
+   zbyt wolna, także w oryginale).
+
+PŁYNNE PRZEWIJANIE
+Polska wersja przewija planszę płynnie (co piksel), zamiast skokami po
+16 pikseli jak oryginał. Przeciwnicy budzą się względem kamery, więc
+moment ich pojawiania się może się nieco różnić, a dema w trybie demo
+po pewnym czasie rozjeżdżają się z oryginałem.
 
 Instalator sprawdza sumy SHA-256 każdego pliku i odmawia pracy z innym
 wydaniem. Oryginalne pliki są kopiowane do podkatalogu KOPIA_EN\\.
