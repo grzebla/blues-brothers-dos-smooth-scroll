@@ -76,8 +76,8 @@ def build_spec(locale):
             continue
         s = S[e['id']]
         new = s['translation']
-        if s['status'] not in ('translated',):
-            continue
+        if new == s['original']:
+            continue          # bez zmian (np. EGA/VGA)
         if len(new) != e['size']:
             raise PatchError('%s: tłumaczenie ma %d znaków, wymagane dokładnie %d (dopełnij spacjami)'
                              % (e['id'], len(new), e['size']))
