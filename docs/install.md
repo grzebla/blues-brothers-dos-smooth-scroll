@@ -1,4 +1,6 @@
-# Install and play — 1.1.0
+# Smooth Scroll — install and play (1.1.0)
+
+Install the smooth-scrolling mod for The Blues Brothers (DOS). The Polish translation is an optional addition, selected in the startup menu.
 
 [Polski](install.pl.md) · [Project overview](../README.md)
 
@@ -11,8 +13,8 @@
 - DOS to run the game, for example DOSBox-X (tested version: **2026.01.02**).
 
 Download `blues-brothers-1.1.0-patch.zip` and `SHA256SUMS` from
-[release v1.1.0](https://github.com/grzebla/blues-brothers-pl/releases/tag/v1.1.0).
-The [repository](https://github.com/grzebla/blues-brothers-pl) is private, so
+[release v1.1.0](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0).
+The [repository](https://github.com/grzebla/blues-brothers-dos-smooth-scroll) is private, so
 these links require access. The patch ZIP can be provided separately; it
 contains patch data and project code, not complete original game files.
 Inside are `README.txt` (this guide), `CZYTAJ.txt` (Polish guide), `LICENSE.txt`,

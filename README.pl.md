@@ -1,195 +1,90 @@
-# The Blues Brothers (1991, MS-DOS) — polska wersja i płynne przewijanie
+# The Blues Brothers DOS — Smooth Scroll
 
-[English](README.md)
+Polski · **[English](README.md)**
 
-Wydanie **1.1.0** łączy opcjonalną polonizację i niezależny mod płynnego
-przewijania oryginalnej gry Titus na DOS. Angielski profil z płynnym
-przewijaniem zmienia **wyłącznie `1.EXE`**: bez polskich tekstów, grafik ani
-fontów. Dane poziomów, sterowanie i dźwięk pozostają bez zmian; płynne
-przewijanie wpływa jednak na moment aktywacji przeciwników.
+Mod **płynnego przewijania** do **The Blues Brothers (1991, DOS)**. Kamera śledzi gracza z dokładnością do 1 piksela w obu osiach.
 
-![Pasek wyboru postaci w grze](docs/img/choix_ingame.png)
+Graj w oryginalnej wersji angielskiej lub włącz **opcjonalną polonizację**. Menu startowe pozwala wybrać język i przełączyć płynne przewijanie na oryginalne. Wszystkie opcje działają w VGA.
 
-## Dla graczy: instalacja patcha z Release
+**[Pobierz patch v1.1.0](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/download/v1.1.0/blues-brothers-1.1.0-patch.zip)** · [Strona wydania](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0)
 
-Potrzebne są legalnie posiadana kopia **obsługiwanej angielskiej wersji DOS
-na dysk twardy, wydanie TDT/TRSI**, oraz **Python 3.8+**. Python to jedyna
-zależność instalatora; gracze **nie potrzebują Pillow, numpy ani NASM**.
-Wynikowa gra działa w DOS, np. w DOSBox-X.
+To patch, **nie pełna gra**. Potrzebujesz własnej kopii obsługiwanego wydania gry.
 
-1. Pobierz `blues-brothers-1.1.0-patch.zip` i `SHA256SUMS` z
-   [wydania v1.1.0](https://github.com/grzebla/blues-brothers-pl/releases/tag/v1.1.0),
-   porównaj SHA-256 ZIP-a z `SHA256SUMS`, następnie rozpakuj paczkę.
-2. W katalogu rozpakowanego patcha uruchom poniższe polecenia w terminalu
-   systemu gospodarza, **nie** w DOSBox. Zastąp `SOURCE` katalogiem oryginału,
-   a `NEW_DIR` ścieżką **nowego, jeszcze nieistniejącego** katalogu, którego
-   katalog nadrzędny już istnieje:
+## Czego potrzebujesz
 
-   ```sh
-   python apply_patch.py SOURCE --check
-   python apply_patch.py SOURCE --output NEW_DIR
-   ```
+- Czystej kopii **angielskiej wersji DOS na dysk twardy, wydanie TDT/TRSI**. Inne wydania nie są obsługiwane; instalator sam sprawdzi pliki.
+- [Pythona 3.8+](https://www.python.org/downloads/) do instalacji patcha. Nie potrzeba dodatkowych pakietów Pythona.
+- [DOSBox-X](https://dosbox-x.com/) do grania. Testowana wersja: **2026.10.01 SDL2**.
 
-   Jeśli Python 3 ma u Ciebie nazwę `python3`, użyj jej zamiast `python`.
-   Ścieżki ze spacjami ujmij w cudzysłowy.
-3. Zamontuj `NEW_DIR` w DOSBox-X i uruchom `START.COM`.
+## 1. Pobierz i rozpakuj
 
-Repozytorium jest **prywatne**: linki do repo i Release wymagają dostępu.
-ZIP patcha można też przekazać osobno. Paczka nie zawiera kompletnych
-oryginalnych plików gry i nie zastępuje posiadania gry.
+Pobierz ZIP patcha z linku powyżej i rozpakuj go. **Nie musisz klonować repozytorium ani niczego budować.**
 
-Instalacja odbywa się **poza źródłem (out of place)**: oryginał pozostaje
-nienaruszony. Wynik to `START.COM` i cztery kompletne katalogi gry, z których
-każdy można uruchomić niezależnie:
+Repozytorium jest obecnie prywatne, więc linki do pobrania wymagają dostępu. Możesz też użyć ZIP-a patcha przekazanego bezpośrednio.
 
-| Profil | Katalog | Język | Przewijanie |
-|---|---|---|---|
-| `en-original` | `ENORIG` | angielski | oryginalne |
-| `en-smooth` | `ENSMOOTH` | angielski | płynne; zmieniony tylko `1.EXE` |
-| `pl-original` | `PLORIG` | polski | oryginalne |
-| `pl-smooth` | `PLSMOOTH` | polski | płynne |
+## 2. Zainstaluj patch
 
-`START.COM` ma dwa ekrany: **Language/Język** (`1 English`, `2 Polski`),
-a potem **Original version / Smooth scroll** lub **Wersja oryginalna /
-Płynne przewijanie**. Zawsze uruchamia VGA bezpośrednio, bez starego menu
-cracktra. Aby grać tylko po angielsku z płynnym przewijaniem, wybierz
-English → Smooth scroll albo wejdź do `ENSMOOTH` i uruchom `1.EXE`.
-Nie ma opcji instalatora `--variant`.
-
-Nowy format nie ma `--restore`: oryginał nadal jest w katalogu źródłowym.
-Kopię zmienioną patchem 1.0 trzeba najpierw odtworzyć **starym instalatorem
-1.0** albo zastąpić czystą kopią gry.
-
-[Instalacja i rozwiązywanie problemów](docs/install.pl.md) ·
-[Zgodność i wyniki testów](docs/compatibility.pl.md)
-
-## Obsługiwana baza i ograniczenia płynnego przewijania
-
-- Bazowy `1.EXE`: **196608 bajtów**, SHA-256
-  `769ee254b154a9444205524ec4b28a8147a372ac5b2cee2e25fcd83aa90d0add`.
-  Instalator sprawdza **wszystkie 50 plików `KNOWN_FILES`**, nie tylko EXE.
-  Inne wydania nie są obsługiwane.
-- Testowane emulatory: **DOSBox-X 2026.01.02** i **2026.10.01 SDL2**; ustawienia:
-  `machine=svga_s3`, `memsize=16`, `core=normal`, `cycles=fixed 20000`.
-  Pełna prędkość (~23 kl./s) wymaga ok. 12000 cykli lub więcej;
-  3000 to za mało także dla oryginału.
-- Kamera płynnego przewijania śledzi gracza z dokładnością **1 px w obu
-  osiach**. Inny moment aktywacji przeciwników sprawia, że nagrane dema
-  tracą synchronizację po ok. **60 s**.
-- Tryb dwóch graczy, przełączanie postaci i prawdziwy sprzęt nie są
-  potwierdzone. [Zapisany zakres testów 1.1.0](docs/compatibility.pl.md)
-  rozróżnia bieżące testy odbiorcze i raporty historyczne.
-
-[Opis techniczny moda](mods/smooth_scroll/README.pl.md)
-
-## Co zostało przetłumaczone
-
-Gra używa napisów bitmapowych zamiast uniwersalnego fontu tekstowego.
-
-| Gdzie | Oryginał | Polska wersja |
-|---|---|---|
-| wybór postaci | CHOOSE YOUR PLAYER / PRESS FIRE TO START | WYBIERZ POSTAĆ / NACIŚNIJ FIRE, BY GRAĆ |
-| koniec gry (sprite) | GAME OVER | KONIEC GRY |
-| dodatkowe życie (sprite) | 1UP | +1 ŻYCIE |
-| mapa między poziomami | CHEMICALS, STORE | CHEMIA, SKLEP |
-| neony poziomu 1 i ich odbicia | STORE, MUSIC | SKLEP, PŁYTY |
-| tabliczka poziomu 5 | PROGRAMMER | PROGRAMISTA |
-| ekran zmiany dyskietki | INSERT DISK II | WŁÓŻ DYSK II |
-| komunikaty DOS | VIDEO ERROR. / OUT OF MEMORY. | BRAK EGA/VGA. / BRAK RAM-U. |
-
-Bez zmian pozostają nazwy własne (The Blues Brothers, Jake, Elwood, Titus),
-graffiti i HI-FI. Mała tabliczka OPEN zostaje po angielsku z braku miejsca
-(status `review`). Przetłumaczono też historyczne teksty RUNME
-(PRZEDSTAWIA, firmy, Intro, „Kto inny da wam takie rzeczy?”), ale launcher
-wydania nie korzysta z tego menu. Pełna lista:
-[`localization/pl/strings.json`](localization/pl/strings.json).
-
-## Budowanie z klona repozytorium (tylko dla twórców)
-
-Wymagany dostęp do repozytorium. Zainstaluj Python 3, Pillow, numpy oraz
-**NASM** (polecenie `nasm`; na macOS: `brew install nasm`). DOSBox-X jest
-potrzebny tylko do testów emulatorowych. To **zależności budowania**, nie gracza.
+Otwórz terminal w katalogu rozpakowanego patcha — **nie w DOSBox**. Wpisz:
 
 ```sh
-git clone https://github.com/grzebla/blues-brothers-pl.git
-cd blues-brothers-pl
+python apply_patch.py "C:\GAMES\BLUES" --output "C:\GAMES\BB110"
+```
+
+Zastąp przykładowe ścieżki własnymi:
+- `C:\GAMES\BLUES` — katalog oryginalnej gry.
+- `C:\GAMES\BB110` — nowy katalog na grę z patchem. **Nie może jeszcze istnieć**, a jego katalog nadrzędny musi istnieć. Wybierz miejsce poza katalogiem oryginału.
+
+Na macOS/Linuksie użyj ścieżek swojego systemu i polecenia `python3` zamiast `python`.
+
+**Oryginalna gra pozostaje nietknięta.** Nowy katalog zawiera wszystkie cztery kombinacje; wybierzesz jedną przy uruchomieniu.
+
+## 3. Uruchom grę
+
+Otwórz DOSBox-X i wpisz poniższe polecenia, podając katalog wynikowy z kroku 2:
+
+```text
+mount c "C:\GAMES\BB110"
+c:
+START.COM
+```
+
+W menu wybierz kolejno:
+1. **Język:** `1` English lub `2` Polski.
+2. **Przewijanie:** `1` oryginalne lub `2` płynne.
+
+**Aby grać z modem płynnego przewijania, wybierz English → Smooth scroll (`1`, potem `2`).** Aby dodać polonizację, wybierz Polski → Płynne przewijanie (`2`, potem `2`).
+
+## Potrzebujesz pomocy?
+
+- [Pełna instrukcja instalacji i rozwiązywanie problemów](docs/install.pl.md)
+- [Obsługiwana wersja gry, ustawienia emulatora i zgodność](docs/compatibility.pl.md)
+- [Opis moda płynnego przewijania](mods/smooth_scroll/README.pl.md)
+
+Płynne przewijanie zmienia moment aktywacji przeciwników i powoduje utratę synchronizacji nagranych dem. Tryb dwóch graczy, przełączanie postaci i prawdziwy sprzęt nie zostały zweryfikowane.
+
+<details>
+<summary>Dla twórców: budowanie ze źródeł</summary>
+
+Wymagane: Python 3, Pillow, numpy i NASM (polecenie `nasm`).
+
+```sh
+git clone https://github.com/grzebla/blues-brothers-dos-smooth-scroll.git
+cd blues-brothers-dos-smooth-scroll
 python3 -m pip install Pillow numpy
-nasm -v
 ```
 
-Skopiuj czyste pliki obsługiwanego wydania do `original/`; nie publikuj ich.
-Pojedynczy profil buduje się opcjami `--locale en|pl` i `--scroll original|smooth`:
+Umieść czyste pliki obsługiwanego wydania gry w `original/`, a następnie zbuduj angielską grę z płynnym przewijaniem:
 
 ```sh
-python3 tools/build.py --source original --locale en --scroll original --output build/en-original
 python3 tools/build.py --source original --locale en --scroll smooth --output build/en-smooth
-python3 tools/build.py --source original --locale pl --scroll original --output build/pl-original
-python3 tools/build.py --source original --locale pl --scroll smooth --output build/pl-smooth
 ```
 
-Każdy build zapisuje `game/`, `manifest.json` i `report.txt` we wskazanym
-katalogu wyjściowym. Domyślnie nadal budowana jest **polska wersja z płynnym
-przewijaniem**; `--classic-scroll` jest aliasem `--scroll original`.
+Uruchom `1.EXE` z `build/en-smooth/game/` w DOSBox-X. Użyj `--locale pl`, aby dodać polonizację, lub `--scroll original` dla oryginalnego przewijania. To buduje jedną kombinację, bez menu wyboru.
 
-Generator wydania sam buduje **wszystkie cztery profile i launcher**;
-nie przyjmuje już opcji `--build`:
+[Teksty tłumaczenia](localization/pl/strings.json) · [Formaty i limity](docs/file-formats.md) · [Analiza silnika](docs/analysis.md)
 
-```sh
-python3 tools/make_patch.py --source original --output patches/dist --version 1.1.0
-```
+</details>
 
-Wynik: `patches/dist/blues-brothers-1.1.0-patch.zip` oraz
-`patches/dist/SHA256SUMS`. Generator odmawia nadpisania paczki z istniejącym
-numerem wersji; wybierz inny katalog `--output` albo nową wersję.
-Nie rozpowszechniaj `original/` ani katalogów z gotową grą.
+## Licencja
 
-### Zmiana tłumaczenia
-
-Edytuj `translation` w `localization/pl/strings.json`. Zachowaj `max_size`,
-zestaw glifów danego fontu (`python3 tools/font_specimen.py`) i limity zasobów
-silnika. Font wyboru postaci zawiera wszystkie polskie wielkie litery;
-fonty szyldów — tylko glify potrzebne do obecnych napisów. Historyczne wpisy
-`runme.*` muszą być w ASCII i mieć dokładnie oryginalną długość bajtową
-(dopełnij spacjami); komunikaty `exe.*` mają wspólny limit **26 znaków**.
-
-Podgląd: `python3 tools/make_graphics.py --preview work/preview`, a build
-z ponownym wygenerowaniem polskich grafik: `python3 tools/build.py --render`.
-Ręcznie edytując indeksowane PNG w `localization/pl/graphics/`, zachowaj paletę
-i ustaw `"mode": "manual"`. Systemowe fonty macOS są opcjonalne przy ponownym
-generowaniu masek dużych napisów. Zobacz [formaty i limity](docs/file-formats.md)
-oraz [analizę silnika](docs/analysis.md).
-
-### Testy automatyczne
-
-Testy narzędzi i instalatora uruchamia `tests/run_tests.sh`. Testy integracyjne
-DOSBox-X wymagają dodatkowo [Varlock](https://varlock.dev) w `PATH`:
-`tests/run_tests.sh --dosbox`. Cztery wybory launchera sprawdzisz poleceniem:
-
-```sh
-python3 tests/run_launcher_tests.py --game build/bundle --out tests/results/launcher \
-  --dosbox /ścieżka/do/dosbox-x
-```
-
-`build/bundle` oznacza zainstalowany katalog czterech profili. Do bezokienkowych
-testów na macOS użyj **DOSBox-X 2026.10.01 SDL2**: wersja 2026.01.02 ma awarie
-renderera powierzchni przy zmianie trybu ze sterownikiem dummy.
-`tests/run_dosbox_tests.py` również przyjmuje `--dosbox /ścieżka/do/dosbox-x`.
-Harness korzysta
-z Varlock i dołączonego `.env.schema`, wymuszając sterowniki SDL dummy:
-**bez okien, przejmowania fokusu i dźwięku na hoście**. Obraz i audio nadal
-są nagrywane do asercji; wydawana gra nie jest wyciszona. Nie ma fallbacku
-do GUI. Varlock i DOSBox-X nie są potrzebne do budowania ani instalacji patcha.
-Zobacz [zgodność i zapisane wyniki](docs/compatibility.pl.md).
-
-## Struktura i licencje
-
-- `tools/`: kodeki, eksport/import, grafiki, buildy i paczki patcha;
-  `tools/patcher/apply_patch.py`: instalator dla graczy.
-- `localization/pl/`: teksty, sześć stylów fontów bitmapowych, grafiki i maski.
-- `mods/`: kod launchera i przewijania; `patches/`: specyfikacje/wyniki patcha.
-- `tests/`: testy narzędzi, harness DOSBox-X i historyczne wyniki; `docs/`: opis techniczny.
-- `original/`, `work/`, `build/`: lokalna gra, pliki robocze i wyniki budowania.
-
-Kod projektu, w tym launcher i przewijanie: **MIT**. Lokalizacja: **CC BY 4.0**.
-Gra nadal © 1991 Titus Interactive; oryginalne materiały gry i TDT/TRSI
-zachowują prawa swoich właścicieli. Zobacz [LICENSE](LICENSE).
+Kod projektu: **MIT**. Polonizacja: **CC BY 4.0**. Oryginalna gra pozostaje © 1991 Titus Interactive. Zobacz [LICENSE](LICENSE).

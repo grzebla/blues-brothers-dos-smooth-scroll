@@ -132,7 +132,7 @@ def create_package(source, work, version):
                     str(ROOT / 'mods' / 'launcher' / 'start.asm')], check=True)
     patch = {
         'format_version': 2,
-        'title': 'The Blues Brothers — English/Polski, original/smooth scroll',
+        'title': 'The Blues Brothers DOS — Smooth Scroll with optional Polish translation',
         'version': version,
         'supported_release': 'English MS-DOS hard-disk TDT/TRSI release; '
                              '1.EXE 196608 B, SHA-256 ' + gd.KNOWN_FILES['1.EXE'][1],
@@ -158,10 +158,10 @@ def create_package(source, work, version):
         text = (ROOT / 'docs' / source_doc).read_text(encoding='utf-8')
         for before, after in [('(install.pl.md)', '(CZYTAJ.txt)'),
                               ('(install.md)', '(README.txt)'),
-                              ('(../README.md)', '(https://github.com/grzebla/blues-brothers-pl#readme)'),
-                              ('(../README.pl.md)', '(https://github.com/grzebla/blues-brothers-pl/blob/main/README.pl.md)'),
-                              ('(compatibility.md)', '(https://github.com/grzebla/blues-brothers-pl/blob/main/docs/compatibility.md)'),
-                              ('(compatibility.pl.md)', '(https://github.com/grzebla/blues-brothers-pl/blob/main/docs/compatibility.pl.md)')]:
+                              ('(../README.md)', '(https://github.com/grzebla/blues-brothers-dos-smooth-scroll#readme)'),
+                              ('(../README.pl.md)', '(https://github.com/grzebla/blues-brothers-dos-smooth-scroll/blob/main/README.pl.md)'),
+                              ('(compatibility.md)', '(https://github.com/grzebla/blues-brothers-dos-smooth-scroll/blob/main/docs/compatibility.md)'),
+                              ('(compatibility.pl.md)', '(https://github.com/grzebla/blues-brothers-dos-smooth-scroll/blob/main/docs/compatibility.pl.md)')]:
             text = text.replace(before, after)
         (package / target_doc).write_text(text.replace('1.1.0', version), encoding='utf-8')
     shutil.copyfile(ROOT / 'LICENSE', package / 'LICENSE.txt')

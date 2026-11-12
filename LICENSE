@@ -1,5 +1,5 @@
-The Blues Brothers (MS-DOS) translation and smooth-scroll project
-==============================================================
+The Blues Brothers DOS — Smooth Scroll with optional Polish translation
+======================================================================
 
 1. Project code — MIT License
 
@@ -41,7 +41,7 @@ artwork in localization/pl/ are licensed under Creative Commons Attribution
 https://creativecommons.org/licenses/by/4.0/
 
 Attribution: blues-brothers-pl contributors,
-https://github.com/grzebla/blues-brothers-pl
+https://github.com/grzebla/blues-brothers-dos-smooth-scroll
 
 This grant covers the contributors' localization work, not underlying game
 artwork or other third-party material, whose rights remain with their owners.

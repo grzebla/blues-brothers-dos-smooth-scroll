@@ -1,4 +1,6 @@
-# Instalacja i uruchomienie — 1.1.0
+# Smooth Scroll — instalacja i uruchomienie (1.1.0)
+
+Zainstaluj mod płynnego przewijania do The Blues Brothers (DOS). Polonizacja jest opcjonalnym dodatkiem, wybieranym w menu startowym.
 
 [English](install.md) · [Opis projektu](../README.pl.md)
 
@@ -11,8 +13,8 @@
 - DOS do uruchomienia gry, np. DOSBox-X (testowana wersja: **2026.01.02**).
 
 Pobierz `blues-brothers-1.1.0-patch.zip` oraz `SHA256SUMS` z
-[wydania v1.1.0](https://github.com/grzebla/blues-brothers-pl/releases/tag/v1.1.0).
-[Repozytorium](https://github.com/grzebla/blues-brothers-pl) jest prywatne,
+[wydania v1.1.0](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0).
+[Repozytorium](https://github.com/grzebla/blues-brothers-dos-smooth-scroll) jest prywatne,
 więc linki wymagają dostępu. ZIP patcha można przekazać osobno; zawiera dane
 patcha i kod projektu, nie kompletne oryginalne pliki gry.
 W środku są `README.txt` (instrukcja EN), `CZYTAJ.txt` (ta instrukcja),
