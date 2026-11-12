@@ -20,7 +20,7 @@ To patch, **nie pełna gra**. Potrzebujesz własnej kopii obsługiwanego wydania
 
 Pobierz ZIP patcha z linku powyżej i rozpakuj go. **Nie musisz klonować repozytorium ani niczego budować.**
 
-Repozytorium jest obecnie prywatne, więc linki do pobrania wymagają dostępu. Możesz też użyć ZIP-a patcha przekazanego bezpośrednio.
+Repozytorium i patch są dostępne publicznie. Nie potrzebujesz konta GitHub ani zgody na dostęp.
 
 ## 2. Zainstaluj patch
 

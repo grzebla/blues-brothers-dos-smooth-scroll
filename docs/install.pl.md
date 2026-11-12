@@ -14,8 +14,8 @@ Zainstaluj mod płynnego przewijania do The Blues Brothers (DOS). Polonizacja je
 
 Pobierz `blues-brothers-1.1.0-patch.zip` oraz `SHA256SUMS` z
 [wydania v1.1.0](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0).
-[Repozytorium](https://github.com/grzebla/blues-brothers-dos-smooth-scroll) jest prywatne,
-więc linki wymagają dostępu. ZIP patcha można przekazać osobno; zawiera dane
+[Repozytorium](https://github.com/grzebla/blues-brothers-dos-smooth-scroll)
+i pliki wydania są publiczne; nie potrzebujesz konta GitHub. ZIP zawiera dane
 patcha i kod projektu, nie kompletne oryginalne pliki gry.
 W środku są `README.txt` (instrukcja EN), `CZYTAJ.txt` (ta instrukcja),
 `LICENSE.txt`, `START.COM`, `patch.json`, `apply_patch.py` i `bbformats.py`.
@@ -129,8 +129,9 @@ Zobacz [zgodność](compatibility.pl.md).
 - **Chcesz cofnąć 1.1.0:** nowy format nie ma `--restore`. Źródło nie było
   zmieniane; uruchom je ponownie lub usuń wyłącznie wygenerowany katalog
   wyjściowy.
-- **Link do Release nie działa:** wymaga dostępu do prywatnego repozytorium;
-  poproś o dostęp albo osobno przekazany ZIP patcha, nie o pliki gry.
+- **Link do pobrania nie działa:** otwórz
+  [stronę wydania](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0)
+  i pobierz ZIP patcha z sekcji **Assets**. Logowanie nie jest wymagane.
 
 Zapisany zakres testów 1.1.0 i pozostałe ograniczenia opisuje
 [dokumentacja zgodności](compatibility.pl.md). `tests/results/latest` zawiera

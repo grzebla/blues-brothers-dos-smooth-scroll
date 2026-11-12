@@ -14,8 +14,8 @@ Install the smooth-scrolling mod for The Blues Brothers (DOS). The Polish transl
 
 Download `blues-brothers-1.1.0-patch.zip` and `SHA256SUMS` from
 [release v1.1.0](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0).
-The [repository](https://github.com/grzebla/blues-brothers-dos-smooth-scroll) is private, so
-these links require access. The patch ZIP can be provided separately; it
+The [repository](https://github.com/grzebla/blues-brothers-dos-smooth-scroll)
+and release downloads are public; no GitHub account is needed. The ZIP
 contains patch data and project code, not complete original game files.
 Inside are `README.txt` (this guide), `CZYTAJ.txt` (Polish guide), `LICENSE.txt`,
 `START.COM`, `patch.json`, `apply_patch.py` and `bbformats.py`.
@@ -128,8 +128,9 @@ and real hardware are unconfirmed. See [compatibility](compatibility.md).
 - **You want to undo 1.1.0:** there is no `--restore` in the new format.
   The source was never changed; run it again or discard only the generated
   output directory.
-- **You cannot open the release link:** it requires private-repository access;
-  ask for access or a separately supplied patch ZIP, not game files.
+- **You cannot open the download link:** open the
+  [release page](https://github.com/grzebla/blues-brothers-dos-smooth-scroll/releases/tag/v1.1.0)
+  and download the patch ZIP from **Assets**. No sign-in is required.
 
 See [compatibility and tests](compatibility.md) for the recorded 1.1.0 test
 scope and remaining limitations. `tests/results/latest` contains historical

@@ -20,7 +20,7 @@ This is a patch, **not the full game**. You need your own copy of the supported 
 
 Download the patch ZIP linked above and extract it. **You do not need to clone this repository or build anything.**
 
-The repository is currently private, so download links require access. You can also use a patch ZIP shared with you directly.
+The repository and patch download are public. No GitHub account or access request is needed.
 
 ## 2. Install the patch
 
