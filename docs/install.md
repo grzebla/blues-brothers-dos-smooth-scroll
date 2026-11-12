@@ -79,8 +79,15 @@ path below with your actual `NEW_DIR`):
 ```text
 mount c "C:\GAMES\BB110"
 c:
+config -set cpu cycles=fixed 20000
 START.COM
 ```
+
+Enter these commands at the DOSBox-X prompt, not in your host terminal.
+Use `config -set cpu cycles=fixed 20000`, not the shorthand `cycles fixed 20000`:
+DOSBox-X does not enable configuration shortcuts as shell commands by default.
+This command was verified in DOSBox-X **2026.10.01 SDL2** by changing an initial
+3000 cycles to 20000 and reading the setting back with `config -get cpu cycles`.
 
 The launcher shows **Language/Język**: `1 English`, `2 Polski`. The second
 screen offers **Original version / Smooth scroll** in English or **Wersja

@@ -79,8 +79,15 @@ systemową swoim `NEW_DIR`):
 ```text
 mount c "C:\GAMES\BB110"
 c:
+config -set cpu cycles=fixed 20000
 START.COM
 ```
+
+Wpisuj te polecenia w DOSBox-X, nie w terminalu swojego systemu.
+Użyj `config -set cpu cycles=fixed 20000`, nie skrótu `cycles fixed 20000`:
+DOSBox-X domyślnie nie udostępnia ustawień konfiguracji jako poleceń powłoki.
+Polecenie sprawdzono w DOSBox-X **2026.10.01 SDL2**: zmieniono początkowe
+3000 cykli na 20000 i odczytano wynik przez `config -get cpu cycles`.
 
 Launcher pokazuje **Language/Język**: `1 English`, `2 Polski`. Drugi ekran
 oferuje **Original version / Smooth scroll** po angielsku albo **Wersja

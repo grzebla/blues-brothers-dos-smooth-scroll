@@ -45,8 +45,11 @@ Otwórz DOSBox-X i wpisz poniższe polecenia, podając katalog wynikowy z kroku 
 ```text
 mount c "C:\GAMES\BB110"
 c:
+config -set cpu cycles=fixed 20000
 START.COM
 ```
+
+Użyj powyższego polecenia `config -set`; skrót `cycles fixed 20000` nie jest domyślnie dostępny w DOSBox-X.
 
 W menu wybierz kolejno:
 1. **Język:** `1` English lub `2` Polski.
