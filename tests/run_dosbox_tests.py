@@ -580,7 +580,10 @@ def main():
     ap.add_argument('--work', default=os.path.join(ROOT, 'work', 'dbx'))
     ap.add_argument('--only', nargs='*')
     ap.add_argument('--merge', action='store_true', help='dopisz/zastąp wyniki w istniejącym results.json')
+    ap.add_argument('--dosbox', help='ścieżka do DOSBox-X (na macOS zalecane SDL2)')
     args = ap.parse_args()
+    if args.dosbox:
+        H.DOSBOX_CANDIDATES = [os.path.abspath(args.dosbox)]
     if not H.find_dosbox():
         print('Brak DOSBox-X - testy pominięte (ustaw DOSBOX_X).')
         return 2
@@ -615,7 +618,7 @@ def main():
     for r in results:
         lines.append('## %s — %s' % (r.name, 'ZALICZONY' if r.ok else 'NIEZALICZONY'))
         for c in r.checks:
-            lines.append('- [%s] %s %s' % ('x' if c['ok'] else ' ', c['check'], c['detail']))
+            lines.append(('- [%s] %s %s' % ('x' if c['ok'] else ' ', c['check'], c['detail'])).rstrip())
         for n in r.notes:
             lines.append('- _%s_' % n)
         lines.append('')

@@ -1,150 +1,188 @@
-# The Blues Brothers (1991, MS-DOS) — polska wersja językowa
+# The Blues Brothers (1991, MS-DOS) — Polish translation & smooth scrolling
 
-Polonizacja oryginalnej gry Titus Interactive na DOS. Modyfikowane są
-wyłącznie oryginalne pliki gry: grafiki z napisami, teksty w plikach
-wykonywalnych oraz kod przewijania ekranu w `1.EXE` (płynne przewijanie,
-patrz niżej). Poziomy, sterowanie i dźwięk pozostają bez zmian.
-Gra po spolszczeniu działa jako zwykła aplikacja DOS (sprawdzone w DOSBox-X).
+[Polski](README.pl.md)
 
-![Pasek wyboru postaci w grze](docs/img/choix_ingame.png)
+Release **1.1.0** combines an optional Polish translation and an independent
+smooth-scroll mod for the original Titus DOS game. English smooth scrolling
+changes **only `1.EXE`**: it does not install Polish text, graphics or fonts.
+Level data, controls and sound are unchanged; smooth scrolling does affect
+when enemies activate.
 
-## Co zostało przetłumaczone
+![In-game Polish character selection bar](docs/img/choix_ingame.png)
 
-Gra nie ma fontu tekstowego — wszystkie napisy są grafikami. Przetłumaczono:
+## Play: install the release patch
 
-| Gdzie | Oryginał | Polska wersja |
+You need your own legally obtained copy of the **supported English DOS
+hard-disk TDT/TRSI edition** and **Python 3.8+**. Python is the patch installer's
+only dependency; players do **not** need Pillow, numpy or NASM. Run the resulting
+game in DOS, for example with DOSBox-X.
+
+1. Download `blues-brothers-1.1.0-patch.zip` and `SHA256SUMS` from
+   [release v1.1.0](https://github.com/grzebla/blues-brothers-pl/releases/tag/v1.1.0),
+   verify the ZIP's SHA-256 against `SHA256SUMS`, then extract it.
+2. From the extracted patch directory, run these commands in your host system's
+   terminal, **not** inside DOSBox. Replace `SOURCE` with the original game
+   directory and `NEW_DIR` with a **new, nonexistent** directory whose parent
+   directory already exists:
+
+   ```sh
+   python apply_patch.py SOURCE --check
+   python apply_patch.py SOURCE --output NEW_DIR
+   ```
+
+   Use `python3` if that is your Python 3 command; quote paths containing spaces.
+3. Mount `NEW_DIR` in DOSBox-X and run `START.COM`.
+
+The repository is **private**: release and repository links require access.
+The patch ZIP can also be shared separately. It contains no complete original
+game files and is not a game download.
+
+Installation is **out of place**: the source is left untouched. The result is
+`START.COM` plus four complete, independently runnable game directories:
+
+| Profile | Directory | Language | Scrolling |
+|---|---|---|---|
+| `en-original` | `ENORIG` | English | Original |
+| `en-smooth` | `ENSMOOTH` | English | Smooth; only `1.EXE` modified |
+| `pl-original` | `PLORIG` | Polish | Original |
+| `pl-smooth` | `PLSMOOTH` | Polish | Smooth |
+
+`START.COM` has two screens: **Language/Język** (`1 English`, `2 Polski`),
+then **Original version / Smooth scroll** or **Wersja oryginalna / Płynne
+przewijanie**. It always starts VGA directly, without the old cracktro menu.
+For English smooth scrolling alone, choose English → Smooth scroll, or enter
+`ENSMOOTH` and run `1.EXE`. There is no `--variant` installation option.
+
+There is no `--restore` in this format: keep using the untouched source to play
+the original. A copy patched with 1.0 must first be restored with its **old 1.0
+installer**, or replaced with a clean copy.
+
+[Installation and troubleshooting](docs/install.md) ·
+[Compatibility and test results](docs/compatibility.md)
+
+## Supported base and smooth-scroll caveats
+
+- Base `1.EXE`: **196608 bytes**, SHA-256
+  `769ee254b154a9444205524ec4b28a8147a372ac5b2cee2e25fcd83aa90d0add`.
+  The installer validates **all 50 files in `KNOWN_FILES`**, not just the EXE.
+  Other editions are not supported.
+- Tested emulators: **DOSBox-X 2026.01.02** and **2026.10.01 SDL2**; use `machine=svga_s3`,
+  `memsize=16`, `core=normal`, `cycles=fixed 20000`. About 12000 cycles or more
+  are needed for full speed (~23 fps); 3000 is too slow even for the original.
+- Smooth scrolling follows the player at **1-pixel precision in both axes**.
+  Enemy activation changes, so recorded demos lose sync after about **60 s**.
+- Two-player mode, character switching and real hardware remain unconfirmed.
+  See [the recorded 1.1.0 test scope](docs/compatibility.md) for the distinction
+  between current acceptance checks and historical reports.
+
+[How the scrolling mod works](mods/smooth_scroll/README.md)
+
+## What is translated
+
+The game uses bitmap artwork rather than a general-purpose text font.
+
+| Location | English | Polish |
 |---|---|---|
-| ekran wyboru postaci | ← CHOOSE YOUR PLAYER → PRESS FIRE TO START | ← WYBIERZ POSTAĆ → NACIŚNIJ FIRE, BY GRAĆ |
-| koniec gry (sprite) | GAME OVER | KONIEC GRY |
-| dodatkowe życie (sprite) | 1UP | +1 ŻYCIE |
-| mapa między poziomami | CHEMICALS, STORE | CHEMIA, SKLEP |
-| neony w poziomie 1 (także lustrzane odbicia) | STORE, MUSIC | SKLEP, PŁYTY |
-| tabliczka w poziomie 5 | PROGRAMMER | PROGRAMISTA |
-| ekran zmiany dyskietki | INSERT DISK II | WŁÓŻ DYSK II |
-| komunikaty DOS | VIDEO ERROR. / OUT OF MEMORY. | BRAK EGA/VGA. / BRAK RAM-U. |
-| menu RUNME | PRESENTS, From, Intro, komunikat końcowy | PRZEDSTAWIA, firmy, Intro, „Kto inny da wam takie rzeczy?” |
+| Character selection | CHOOSE YOUR PLAYER / PRESS FIRE TO START | WYBIERZ POSTAĆ / NACIŚNIJ FIRE, BY GRAĆ |
+| Game-over sprite | GAME OVER | KONIEC GRY |
+| Extra-life sprite | 1UP | +1 ŻYCIE |
+| Between-level map | CHEMICALS, STORE | CHEMIA, SKLEP |
+| Level 1 signs and reflections | STORE, MUSIC | SKLEP, PŁYTY |
+| Level 5 plaque | PROGRAMMER | PROGRAMISTA |
+| Disk prompt | INSERT DISK II | WŁÓŻ DYSK II |
+| DOS errors | VIDEO ERROR. / OUT OF MEMORY. | BRAK EGA/VGA. / BRAK RAM-U. |
 
-Bez zmian (świadomie): nazwy własne (The Blues Brothers, Jake, Elwood,
-Titus), graffiti, skrót HI-FI, tabliczka OPEN (brak miejsca — oznaczona do
-weryfikacji). Pełna lista: [`localization/pl/strings.json`](localization/pl/strings.json).
+Names (The Blues Brothers, Jake, Elwood, Titus), graffiti and HI-FI stay as-is.
+The tiny OPEN sign remains English because a Polish equivalent does not fit
+(status `review`). Legacy RUNME strings are also localized, but the release
+launcher does not use that menu. Full list:
+[`localization/pl/strings.json`](localization/pl/strings.json).
 
-## Płynne przewijanie
+## Build from a clone (developers only)
 
-Oryginał przewija planszę skokami po 16 px: gdy postać dojdzie do krawędzi,
-ekran „dojeżdża” o pół szerokości. Polska wersja ma domyślnie płynne
-przewijanie: kamera podąża za postacią co 1 piksel w obu osiach. Kod
-(asembler x86) i opis są w [`mods/smooth_scroll/`](mods/smooth_scroll/README.md).
-
-Skutki uboczne:
-
-- **Moment pojawiania się przeciwników** może się nieco różnić od oryginału,
-  bo przeciwnicy budzą się względem kamery. Dlatego dema (tryb demo w menu)
-  po pewnym czasie przestają odtwarzać się tak jak w oryginale.
-- **Wymagania CPU w DOSBox.** Pełne ~23 klatki/s są od ok. `cycles=12000`
-  (oryginał ma podobny próg). Przy domyślnych 3000 gra jest zbyt wolna,
-  także w oryginale.
-
-## Instalacja dla graczy (patch)
-
-Potrzebne: legalna kopia obsługiwanego wydania (angielska wersja DOS na dysk
-twardy, `1.EXE` 196 608 B, SHA-256 `769ee254…0add`) i Python 3.
-
-```
-python apply_patch.py C:\GRY\BLUES          # instalacja
-python apply_patch.py C:\GRY\BLUES --check  # tylko sprawdzenie plików
-python apply_patch.py C:\GRY\BLUES --restore
-```
-
-Instalator sprawdza SHA-256 każdego pliku, odmawia pracy z inną wersją,
-kopiuje oryginały do `KOPIA_EN\`. Patch (ok. 20 KB) zawiera tylko zmienione
-bajty i piksele — żadnych plików gry. Uruchomienie: `RUNME` → `[2] - VGA`
-albo bezpośrednio `1.EXE`. W DOSBox ustaw `cycles=12000` lub więcej (np.
-`dosbox-x -set "cpu cycles=12000"`). Szczegóły zgodności: [docs/compatibility.md](docs/compatibility.md).
-
-## Budowanie polskiej wersji (dla twórców)
-
-Wymagania: Python 3.8+, Pillow, numpy, asembler nasm (płynne przewijanie,
-np. `brew install nasm`). Do testów: DOSBox-X, a do
-generowania masek dużych napisów — kroje systemowe macOS (opcjonalnie).
+Repository access is required. Install Python 3, Pillow, numpy and **NASM**
+(the `nasm` command; on macOS: `brew install nasm`). DOSBox-X is needed only
+for emulator tests. These are **build dependencies**, not player dependencies.
 
 ```sh
-# oryginalne pliki gry w katalogu original/ (nie są modyfikowane)
-python tools/extract.py --source original --output work/extracted   # eksport zasobów + test round-trip
-python tools/build.py --source original --locale pl --output build  # build -> build/game, build/report.txt
-python tools/make_patch.py --source original --build build/game     # patch -> patches/dist/*.zip (z autotestem)
-tests/run_tests.sh            # testy narzędzi
-tests/run_tests.sh --dosbox   # + testy w DOSBox-X (ok. 20 min)
+git clone https://github.com/grzebla/blues-brothers-pl.git
+cd blues-brothers-pl
+python3 -m pip install Pillow numpy
+nasm -v
 ```
 
-Build jest deterministyczny (dwa przebiegi dają identyczne bajty — sprawdza to
-`tests/test_tools.py`).
+Copy your clean, supported game files into `original/`; never publish them.
+Build a single profile using `--locale en|pl` and `--scroll original|smooth`:
 
-### Zmiana tłumaczenia — instrukcja tworzenia polskiego wydania
-
-1. Edytuj pole `translation` w `localization/pl/strings.json`.
-   * Napisy graficzne mogą używać tylko znaków obecnych w foncie danego
-     napisu — sprawdź `python tools/font_specimen.py` (podgląd:
-     `docs/img/fonts.png`). Font paska wyboru zawiera pełny alfabet z
-     polskimi literami; fonty szyldów — tylko litery potrzebne do obecnych
-     napisów (brakujące glify można dorysować w JSON, patrz
-     [docs/file-formats.md](docs/file-formats.md#10-formaty-edycyjne-projektu)).
-   * Limity szerokości są w polu `max_size`; generator zgłosi błąd, jeśli
-     tekst się nie mieści.
-   * Teksty `runme.*` muszą mieć dokładnie tę samą długość (dopełnij
-     spacjami) i być w ASCII; komunikaty `exe.*` razem ≤ 26 znaków.
-2. Wygeneruj grafiki: `python tools/make_graphics.py --preview work/preview`
-   (podgląd przed/po w `work/preview/`). Albo jednym poleceniem:
-   `python tools/build.py --render`.
-3. (Opcjonalnie) popraw PNG ręcznie w `localization/pl/graphics/` —
-   w edytorze z trybem indeksowanym, bez zmiany palety. Ustaw wtedy
-   `"mode": "manual"` w danym wpisie, by generator nie nadpisał zmian.
-4. Zbuduj i przetestuj: `python tools/build.py`, `tests/run_tests.sh --dosbox`.
-5. Utwórz patch: `python tools/make_patch.py --version 1.1`.
-
-## Struktura repozytorium
-
-```
-original/               oryginalna gra (nie publikować, nie modyfikować)
-tools/
-  bbformats.py          kodek: kompresja Titus, ILBM, SQV
-  gamedata.py           sumy kontrolne, poziomy, offsety, limity silnika
-  extract.py            eksport zasobów do PNG/JSON + round-trip
-  make_graphics.py      generator polskich grafik z tłumaczeń i fontów
-  glyphkit.py           fonty bitmapowe JSON, maski, style
-  import.py             PNG -> formaty gry (z kontrolą limitów)
-  patch_exe.py          teksty w 1.EXE / RUNME.COM (sygnatury, SHA-256)
-  build.py              pełny build + weryfikacja + raport
-  make_patch.py         paczka dystrybucyjna + jej autotest
-  font_specimen.py      próbki fontów i pokrycie polskich liter
-  patcher/apply_patch.py  instalator dla graczy
-localization/pl/
-  strings.json          wszystkie teksty: oryginał, tłumaczenie, miejsce, limity, status
-  fonts/*.json          edytowalne fonty bitmapowe (6 stylów)
-  graphics/             polskie grafiki PNG (+ maski dużych napisów)
-patches/text_patches.json  wygenerowana specyfikacja zmian bajtowych
-tests/                  testy narzędzi, harness DOSBox-X, wyniki
-docs/                   analysis.md, file-formats.md, compatibility.md
-build/                  wynik budowania (ignorowany przez git)
+```sh
+python3 tools/build.py --source original --locale en --scroll original --output build/en-original
+python3 tools/build.py --source original --locale en --scroll smooth --output build/en-smooth
+python3 tools/build.py --source original --locale pl --scroll original --output build/pl-original
+python3 tools/build.py --source original --locale pl --scroll smooth --output build/pl-smooth
 ```
 
-## Stan projektu
+Each build writes `game/`, `manifest.json` and `report.txt` under its output
+directory. Defaults remain **Polish + smooth**; `--classic-scroll` is an alias
+for `--scroll original`.
 
-Szczegółowe wyniki testów: [docs/compatibility.md](docs/compatibility.md)
-i `tests/results/latest/report.md`.
+To create the release, the generator builds **all four profiles and the
+launcher itself**; it no longer accepts a `--build` option:
 
-* wszystkie zidentyfikowane teksty dla gracza mają polskie odpowiedniki
-  (poza świadomie pozostawionymi nazwami i jednym wpisem do weryfikacji),
-* polskie litery (wszystkie 9 wielkich) wyświetlane w grze — test pangramem,
-* gra uruchamia się w DOSBox-X, przechodzi przez wszystkie 6 poziomów
-  i ekran końca gry (testy automatyczne, część z łatkami testowymi),
-* odtworzenie dema daje rozgrywkę identyczną z oryginałem (brak regresji),
-* build deterministyczny, patch testowany na czystej kopii.
+```sh
+python3 tools/make_patch.py --source original --output patches/dist --version 1.1.0
+```
 
-Ograniczenia i to, czego nie dało się sprawdzić automatycznie (prawdziwy
-sprzęt, naturalna utrata wszystkich żyć, wyskakujący napis „+1 ŻYCIE”),
-opisuje [docs/compatibility.md](docs/compatibility.md).
+Output: `patches/dist/blues-brothers-1.1.0-patch.zip` and
+`patches/dist/SHA256SUMS`. The generator refuses to overwrite a package with
+an existing version number; use another `--output` directory or a new version.
+Do not distribute `original/` or built game directories.
 
-## Licencje
+### Editing the Polish translation
 
-Kod: MIT, tłumaczenie i grafiki: CC BY 4.0 — patrz [LICENSE](LICENSE).
-Gra © 1991 Titus Interactive (nie jest częścią projektu).
+Edit `translation` in `localization/pl/strings.json`. Respect `max_size`,
+the glyphs available in each bitmap font (`python3 tools/font_specimen.py`),
+and the engine's resource limits. The character-selection font covers all
+Polish capitals; sign fonts contain only the glyphs currently needed.
+Legacy `runme.*` replacements must be ASCII and exactly the original byte
+length (space-padded); `exe.*` messages share a **26-character** budget.
+
+Preview with `python3 tools/make_graphics.py --preview work/preview`, or rebuild
+Polish graphics with `python3 tools/build.py --render`. For hand-edited indexed
+PNGs in `localization/pl/graphics/`, keep the palette and set `"mode": "manual"`.
+System macOS fonts are optional for regenerating large-letter masks.
+See [formats and limits](docs/file-formats.md) and [reverse-engineering notes](docs/analysis.md)
+(both in Polish).
+
+### Automated tests
+
+Run `tests/run_tests.sh` for tools and installer checks. DOSBox-X integration
+tests additionally require [Varlock](https://varlock.dev) on `PATH`:
+`tests/run_tests.sh --dosbox`. Test the four launcher choices with:
+
+```sh
+python3 tests/run_launcher_tests.py --game build/bundle --out tests/results/launcher \
+  --dosbox /path/to/dosbox-x
+```
+
+Here `build/bundle` is the installed four-profile directory. For headless tests
+on macOS use **DOSBox-X 2026.10.01 SDL2**: 2026.01.02 has surface-renderer
+crashes during mode changes with dummy video. `tests/run_dosbox_tests.py` also
+accepts `--dosbox /path/to/dosbox-x`. The harness uses
+Varlock and the checked-in `.env.schema` to enforce SDL dummy video/audio:
+**no windows, no focus stealing, no sound on the host**. Video and audio are
+still captured for assertions; the distributed game is not muted. There is
+no GUI fallback. Varlock and DOSBox-X are not required to build or install
+the patch. See [compatibility and recorded results](docs/compatibility.md).
+
+## Repository map and licenses
+
+- `tools/`: codecs, extraction/import, graphics generation, builds, patch packaging;
+  `tools/patcher/apply_patch.py`: player installer.
+- `localization/pl/`: strings, six bitmap-font styles, graphics and masks.
+- `mods/`: launcher and smooth-scroll code; `patches/`: patch specifications/output.
+- `tests/`: tool checks, DOSBox-X harness and historical results; `docs/`: technical notes.
+- `original/`, `work/`, `build/`: local game data and working/output directories.
+
+Project code, including launcher and scrolling code: **MIT**. Localization:
+**CC BY 4.0**. The game remains © 1991 Titus Interactive; original game and
+TDT/TRSI material retain their respective rights. See [LICENSE](LICENSE).

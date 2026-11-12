@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Buduje polską wersję The Blues Brothers (DOS).
+"""Buduje wybrany profil The Blues Brothers (DOS): język i przewijanie.
 
 Użycie:
-    python tools/build.py --source original --locale pl --output build [--render]
+    python tools/build.py --source original --locale en|pl --scroll original|smooth --output build
+    python tools/build.py --locale pl --render
 
 Kroki:
   1. weryfikacja kompletności i wersji gry (SHA-256 wszystkich plików),
@@ -11,7 +12,7 @@ Kroki:
      i płynne przewijanie w 1.EXE (mods/smooth_scroll, wymaga nasm),
   4. (z --render) wygenerowanie grafik z tłumaczeń (tools/make_graphics.py),
   5. zakodowanie zmodyfikowanych grafik (tools/import.py),
-  6. zapis gotowej polskiej wersji gry,
+  6. zapis gotowego profilu gry,
   7. weryfikacja wygenerowanych plików (dekompresja, piksele, limity silnika),
   8. raport zmian (<output>/report.txt, <output>/manifest.json).
 
@@ -101,17 +102,29 @@ def verify_output(src, game_dir, changed, locale):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--source', default='original')
-    ap.add_argument('--locale', default='pl')
+    ap.add_argument('--locale', choices=('en', 'pl'), default='pl')
     ap.add_argument('--output', default='build')
     ap.add_argument('--render', action='store_true', help='wygeneruj grafiki z tłumaczeń przed importem')
     ap.add_argument('--force', action='store_true', help='nie przerywaj przy niezgodnej wersji (niezalecane)')
-    ap.add_argument('--classic-scroll', action='store_true',
-                    help=argparse.SUPPRESS)  # tylko testy: oryginalne przewijanie (regresja dema)
+    scroll = ap.add_mutually_exclusive_group()
+    scroll.add_argument('--scroll', choices=('original', 'smooth'), default='smooth',
+                        help='rodzaj przewijania (domyślnie smooth)')
+    scroll.add_argument('--classic-scroll', action='store_true',
+                        help='alias --scroll original (zgodność ze starszymi testami)')
     args = ap.parse_args()
+    if args.classic_scroll:
+        args.scroll = 'original'
+    if args.render and args.locale == 'en':
+        ap.error('--render dotyczy tylko lokalizacji pl')
     src = os.path.normpath(args.source)
     out = os.path.normpath(args.output)
-    if os.path.abspath(out) == os.path.abspath(src):
-        raise SystemExit('BŁĄD: katalog wyjściowy nie może być katalogiem źródłowym')
+    source_path, output_path = os.path.realpath(src), os.path.realpath(out)
+    try:
+        overlap = os.path.commonpath([source_path, output_path]) in (source_path, output_path)
+    except ValueError:  # różne dyski w Windows
+        overlap = False
+    if overlap:
+        raise SystemExit('BŁĄD: katalog źródłowy i wyjściowy nie mogą się nakładać')
     report = []
     print('[1/8] Weryfikacja wersji gry w %s' % src)
     ident = verify_source(src, args.force)
@@ -129,10 +142,10 @@ def main():
         with open(os.path.join(game, name), 'wb') as f:
             f.write(data)
 
-    print('[3/8] Import tekstów (1.EXE, RUNME.COM) i płynne przewijanie')
-    spec = patch_exe.build_spec(args.locale)
-    exe_files = patch_exe.apply_spec(src, spec)
-    if not args.classic_scroll:
+    print('[3/8] Teksty (%s) i przewijanie (%s)' % (args.locale, args.scroll))
+    spec = patch_exe.build_spec(args.locale) if args.locale == 'pl' else []
+    exe_files = patch_exe.apply_spec(src, spec) if spec else {}
+    if args.scroll == 'smooth':
         exe = bytearray(exe_files.get('1.EXE') or open(gd.find_file(src, '1.EXE'), 'rb').read())
         try:
             report.append(load_smooth_scroll().apply_smooth_scroll(exe))
@@ -140,22 +153,24 @@ def main():
             raise SystemExit('BŁĄD: brak asemblera nasm (potrzebny do płynnego przewijania), np. brew install nasm')
         exe_files['1.EXE'] = bytes(exe)
     else:
-        report.append('płynne przewijanie: wyłączone (--classic-scroll)')
+        report.append('płynne przewijanie: wyłączone (--scroll original)')
 
     if args.render:
         print('[4/8] Generowanie grafik z tłumaczeń')
         mg = load_module('bb_make_graphics', 'make_graphics.py')
         sys.argv = ['make_graphics.py', '--source', src, '--locale', args.locale]
         mg.main()
+    elif args.locale == 'pl':
+        print('[4/8] Generowanie grafik pominięte (użyj --render), używam PNG z localization/pl/graphics')
     else:
-        print('[4/8] Generowanie grafik pominięte (użyj --render), używam PNG z localization/%s/graphics' % args.locale)
+        print('[4/8] Grafiki angielskie pozostają oryginalne')
 
     print('[5/8] Kodowanie grafik')
     log = []
-    gfx_files = importer.import_all(src, args.locale, log)
+    gfx_files = importer.import_all(src, args.locale, log) if args.locale == 'pl' else {}
     report.extend(['Grafiki:'] + log)
 
-    print('[6/8] Zapis polskiej wersji do %s' % game)
+    print('[6/8] Zapis profilu %s-%s do %s' % (args.locale, args.scroll, game))
     changed = {}
     changed.update(exe_files)
     changed.update(gfx_files)
@@ -169,7 +184,8 @@ def main():
     report.extend('  ' + c for c in checks)
 
     print('[8/8] Raport')
-    manifest = {'locale': args.locale, 'source': {}, 'output': {}, 'changed': sorted(changed)}
+    manifest = {'locale': args.locale, 'scroll': args.scroll,
+                'source': {}, 'output': {}, 'changed': sorted(changed)}
     for name in sorted(gd.KNOWN_FILES):
         o = open(gd.find_file(src, name), 'rb').read()
         n = open(os.path.join(game, name), 'rb').read()

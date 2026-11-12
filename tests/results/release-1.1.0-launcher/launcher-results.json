@@ -1,0 +1,67 @@
+[
+  {
+    "scenario": "fixture-en-original",
+    "ok": true,
+    "detail": "wybrano=['ENORIG'], powrót CWD='C:\\\\OTHER'"
+  },
+  {
+    "scenario": "fixture-en-smooth",
+    "ok": true,
+    "detail": "wybrano=['ENSMOOTH'], powrót CWD='C:\\\\OTHER'"
+  },
+  {
+    "scenario": "fixture-pl-original",
+    "ok": true,
+    "detail": "wybrano=['PLORIG'], powrót CWD='C:\\\\OTHER'"
+  },
+  {
+    "scenario": "fixture-pl-smooth",
+    "ok": true,
+    "detail": "wybrano=['PLSMOOTH'], powrót CWD='C:\\\\OTHER'"
+  },
+  {
+    "scenario": "fixture-back-invalid",
+    "ok": true,
+    "detail": "wybrano=['ENSMOOTH'], powrót CWD='C:\\\\OTHER'"
+  },
+  {
+    "scenario": "fixture-exit",
+    "ok": true,
+    "detail": "wybrano=[], powrót CWD='C:\\\\OTHER'"
+  },
+  {
+    "scenario": "fixture-other-drive",
+    "ok": true,
+    "detail": "D:\\OTHER"
+  },
+  {
+    "scenario": "fixture-missing-exe",
+    "ok": true,
+    "detail": "launcher sygnalizuje błąd kodem wyjścia"
+  },
+  {
+    "scenario": "fixture-reject-ega",
+    "ok": true,
+    "detail": "VGA wymagane, kod błędu i brak uruchomionego dziecka"
+  },
+  {
+    "scenario": "boot-en-original",
+    "ok": true,
+    "detail": "pasek języka=1.000 w t=36.112308 s; audio=True"
+  },
+  {
+    "scenario": "boot-en-smooth",
+    "ok": true,
+    "detail": "pasek języka=1.000 w t=36.126576 s; audio=True"
+  },
+  {
+    "scenario": "boot-pl-original",
+    "ok": true,
+    "detail": "pasek języka=1.000 w t=36.126576 s; audio=True"
+  },
+  {
+    "scenario": "boot-pl-smooth",
+    "ok": true,
+    "detail": "pasek języka=1.000 w t=36.140844 s; audio=True"
+  }
+]

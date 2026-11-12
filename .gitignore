@@ -10,3 +10,7 @@
 __pycache__/
 *.pyc
 .DS_Store
+# lokalne wartości środowiska; schemat Varlock pozostaje w repo
+.env
+.env.*
+!.env.schema

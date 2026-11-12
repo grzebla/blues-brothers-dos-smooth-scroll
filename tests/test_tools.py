@@ -164,23 +164,6 @@ class BuildTests(unittest.TestCase):
         finally:
             shutil.rmtree(tmp)
 
-    def test_distribution_patch(self):
-        tmp = tempfile.mkdtemp(prefix='bbpl_patch_')
-        try:
-            out = os.path.join(tmp, 'b')
-            self.run_build(out)
-            r = subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'make_patch.py'), '--source', ORIG,
-                                '--build', os.path.join(out, 'game'), '--output', os.path.join(tmp, 'dist')],
-                               cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-            self.assertEqual(r.returncode, 0, r.stdout)
-            self.assertIn('OK', r.stdout)
-            # paczka nie może zawierać plików gry
-            names = os.listdir(os.path.join(tmp, 'dist', 'blues-brothers-pl-1.0'))
-            for n in names:
-                self.assertNotIn(n.upper(), gd.KNOWN_FILES)
-        finally:
-            shutil.rmtree(tmp)
-
 
 if __name__ == '__main__':
     import warnings

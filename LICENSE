@@ -1,11 +1,19 @@
-Polonizacja "The Blues Brothers" (MS-DOS) - informacje licencyjne
-=================================================================
+The Blues Brothers (MS-DOS) translation and smooth-scroll project
+==============================================================
 
-1. Narzędzia i skrypty (katalogi tools/, tests/, w tym apply_patch.py i bbformats.py)
+1. Project code — MIT License
+
+The project-authored code in tools/, tests/ and mods/ is covered by the MIT
+License. This includes apply_patch.py, bbformats.py, the START.COM launcher
+source in mods/launcher/, and the smooth-scroll assembler and patching code
+in mods/smooth_scroll/, including its relocation changes. Compiled forms of
+this project-authored code distributed in the patch are covered as well.
+This license does not apply to the original game's code or third-party
+TDT/TRSI material.
 
 MIT License
 
-Copyright (c) 2026 autorzy projektu blues-brothers-pl
+Copyright (c) 2026 blues-brothers-pl contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,27 +33,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-2. Tłumaczenie i polskie grafiki (localization/pl/)
+2. Polish localization — CC BY 4.0
 
-Teksty tłumaczenia, fonty JSON i polskie warianty napisów udostępniane są na
-licencji Creative Commons Uznanie autorstwa 4.0 (CC BY 4.0).
+Project-authored translation text, JSON bitmap fonts and Polish lettering
+artwork in localization/pl/ are licensed under Creative Commons Attribution
+4.0 International (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
 
-3. Gra
+Attribution: blues-brothers-pl contributors,
+https://github.com/grzebla/blues-brothers-pl
 
-"The Blues Brothers" (c) 1991 Titus Interactive. Gra, jej kod i oryginalne
-grafiki NIE są częścią tego projektu ani patcha. Patch zawiera wyłącznie
-zmienione bajty tekstów oraz zmienione piksele (polskie napisy) i wymaga
-legalnie posiadanej kopii gry. Pliki RUNME.COM, HARD.COM, INTRO.EXE, JOHN.SQZ,
-OH.SQZ i TERRY.SQZ pochodzą od grup TDT/TRSI (wydanie "crack").
+This grant covers the contributors' localization work, not underlying game
+artwork or other third-party material, whose rights remain with their owners.
 
-4. Materiały referencyjne
+3. Original game and patch distribution
 
-- Projekt cyxx/blues (https://github.com/cyxx/blues) posłużył wyłącznie jako
-  materiał referencyjny do zrozumienia formatów (repozytorium nie zawiera
-  pliku licencji, dlatego żaden jego kod nie został skopiowany - wszystkie
-  narzędzia zostały napisane od nowa).
-- Kształty liter dużych napisów (ekran "WŁÓŻ DYSK II", sprite "KONIEC GRY")
-  zostały jednorazowo wyrenderowane z krojów systemowych macOS (Superclarendon
-  Black, Chalkboard SE Bold) do masek PNG w localization/pl/graphics/masks/.
-  Patch nie zawiera plików krojów.
-- DOSBox-X (GPL-2.0) jest używany wyłącznie do testów, nie jest dystrybuowany.
+"The Blues Brothers" (c) 1991 Titus Interactive. All rights in the original
+game, its code and artwork remain with their respective owners. The project
+and release patch do not distribute complete original game files and require
+a legally obtained copy of the supported game edition. The patch contains
+localization byte/pixel differences, project-authored scrolling code and
+relocation changes, and the project-authored launcher; it is not limited to
+translated text and pixels, nor is it a standalone copy of the game.
+
+RUNME.COM, HARD.COM, INTRO.EXE, JOHN.SQZ, OH.SQZ and TERRY.SQZ in the supported
+source edition originate from TDT/TRSI. Their inclusion in a user's source
+copy or locally generated game directories does not relicense them under MIT
+or CC BY 4.0. No license to redistribute the original game or TDT/TRSI
+material is granted by this project.
+
+4. Reference material
+
+- cyxx/blues (https://github.com/cyxx/blues) was used only as a reference for
+  understanding file formats. That repository had no license file when
+  consulted; none of its code was copied. Project tools were written anew.
+- Letter shapes for the large disk prompt and game-over text were rendered
+  once from macOS system fonts (Superclarendon Black, Chalkboard SE Bold)
+  into PNG masks in localization/pl/graphics/masks/. The patch does not
+  contain font files.
+- DOSBox-X (GPL-2.0) is used for testing and is not distributed in the patch.

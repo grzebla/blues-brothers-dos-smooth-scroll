@@ -1,143 +1,149 @@
-# Zgodność i testy
+# Compatibility and tests
 
-## Środowisko testowe
+[Polski — detailed historical record](compatibility.pl.md) ·
+[Installation 1.1.0](install.md)
 
-| Element | Wersja / ustawienie |
+## Supported release scope
+
+Only the **English DOS hard-disk TDT/TRSI edition** is supported. Its `1.EXE`
+is **196608 bytes**, SHA-256:
+
+```text
+769ee254b154a9444205524ec4b28a8147a372ac5b2cee2e25fcd83aa90d0add
+```
+
+Validation covers **all 50 files in `KNOWN_FILES`**, not just that executable.
+No compatibility with arbitrary editions is claimed.
+
+Installation into a new, nonexistent output directory whose parent already
+exists leaves the source untouched. The result is `START.COM` plus complete `ENORIG`, `ENSMOOTH`,
+`PLORIG` and `PLSMOOTH` directories. English smooth scrolling modifies only
+`1.EXE`, with no Polish localization. The launcher selects language, then
+scrolling, and always starts VGA without the old cracktro menu. You can also
+run `1.EXE` directly inside a profile directory.
+
+## Release 1.1.0 checks — 2026-11-12
+
+| Scope | Result and evidence |
 |---|---|
-| Emulator | DOSBox-X 2026.01.02 (SDL1, macOS arm64) |
-| Maszyna | `machine=svga_s3`, `memsize=16`, `cycles=fixed 20000`, `core=normal` |
-| Dźwięk | Sound Blaster 16 + OPL (domyślne DOSBox-X), PC Speaker |
-| Host | macOS (Darwin 27), Python 3.9.6, Pillow 10, numpy 1.24 |
-| Gra | wydanie z `original/` (patrz docs/analysis.md), build z `build/game` |
+| Tools and installer | **23/23 passed**; four-profile installation, full source validation, failure cleanup, isolated Python without site-packages, reproducible ZIP. [Report](../tests/results/release-1.1.0-tools/report.md). |
+| Launcher | **13/13 passed**: four real game boots with correct language and recorded audio; four fixture selections, Esc/back/invalid keys, CWD/drive restoration, missing EXE and EGA rejection. [Report](../tests/results/release-1.1.0-launcher/launcher-report.md). |
+| Polish engine | `boot`, `all_levels`, `direct_exe`, `smooth_scroll` passed. All six levels loaded with correct palettes/HUD and returned to selection after **forced** completion, not a natural playthrough. [Report](../tests/results/release-1.1.0-engine/report.md). |
+| English smooth scrolling | Level-1 demo: 201 horizontal camera changes; deltas −6 to −1 px; no jumps above 16 px/sample. Polish: 200 changes with the same delta range. [English report](../tests/results/release-1.1.0-en/report.md). |
+| Classic demo comparison | **Passed on rerun**: 200/391 samples identical; all remaining differences explained by localization/fade, **0 unexplained**. The scenario independently builds Polish **original scrolling**; it does not compare smooth gameplay against the original. [Rerun report](../tests/results/release-1.1.0-regression/report.md). |
 
-Zalecana konfiguracja DOSBox / DOSBox-X: domyślna maszyna VGA/SVGA, około
-15000-25000 cykli. Grę uruchamia się przez `RUNME` → `[2] - VGA` albo
-`1.EXE`.
+Current launcher tests and the classic-demo rerun used **DOSBox-X 2026.10.01 SDL2**, commit `b6abbd5`,
+macOS arm64, SVGA S3, 16 MB, normal core and fixed 20000 cycles. The engine
+batch and camera measurements used **2026.01.02 SDL1**. All ran with Varlock,
+SDL dummy video/audio and muted host output: **no windows or focus stealing**.
+Capture still contains sound; the distributed game is not muted.
 
-## Jak działają testy w DOSBox-X
+DOSBox-X 2026.01.02 suffered surface-renderer crashes during dummy-video mode
+changes, leaving incomplete AVI files. Those attempts were not counted as
+passes. Use `--dosbox /path/to/dosbox-x` with 2026.10.01 SDL2 for headless tests;
+there is no fallback to a visible window. Both test runners accept that option.
+The final menu screenshots were visually reviewed: centered, legible, correct
+Polish glyphs and no blocking artifacts.
 
-`tests/run_dosbox_tests.py` dla każdego scenariusza: kopiuje grę do katalogu
-roboczego, uruchamia DOSBox-X z wygenerowaną konfiguracją, wstrzykuje klawisze
-poleceniem `AUTOTYPE`, nagrywa obraz i dźwięk poleceniem `DX-CAPTURE /V /A`,
-a następnie dekoduje nagranie własnym dekoderem ZMBV (`tests/zmbv.py`,
-dokładne kolory - dekoder ffmpeg przekłamywał kanały) i porównuje piksele
-z oczekiwanymi grafikami (`tests/dosbox_harness.py`). Wyjście konsoli DOS
-jest czytane z logu (`-log-con`).
+`tests/results/latest/report.md` and the section below remain **historical**.
+Old in-place installation, backup and restore checks do not validate the new
+format. The historical Polish measurements need not match every `latest` run.
 
-Niektóre ekrany wymagają wielu minut zręcznej gry. Aby je sprawdzić
-automatycznie, scenariusze oznaczone **[łatka testowa]** używają
-`tests/test_patches.py` - zmian **tylko w kopii testowej** (nigdy w buildzie
-ani w patchu):
+## Historical test environment / recommended settings
 
-| Łatka | Miejsce | Działanie |
-|---|---|---|
-| `auto_complete` | `0351:04E2` (plik 0x5BF2) | warunek "poziom ukończony" zawsze prawdziwy - po 50 klatkach gra przechodzi do kolejnego poziomu; pozwala przejść całą grę |
-| `force_gameover` | `0351:0553` (plik 0x5C63) | skok do gałęzi rysowania klatki 127 (oryginalna procedura gry) |
-| `start_level` | `003A:01C0` (plik 0x2764) | numer poziomu startowego |
-| `player_start` | tablice źródłowe pozycji (DS:270D/24CF i DS:2521+82·L/22E3+82·L) | pozycja startowa gracza przy szyldzie |
-| `map_edit` | kopia `*.SQL` | wstawienie kafli z pokoi bonusowych obok startu (kamera nie wjeżdża do tych pokoi bez drzwi) |
-| `swap_error_messages` | tablica `DS:3384` | zamiana wpisów, by test karty CGA wypisał komunikat "brak pamięci" |
+| Component | Version / setting |
+|---|---|
+| Emulator | DOSBox-X **2026.01.02**, SDL1, macOS arm64 |
+| Machine | `machine=svga_s3`, `memsize=16` |
+| CPU | `core=normal`, `cycles=fixed 20000` |
+| Sound | Sound Blaster 16 + OPL (DOSBox-X defaults), PC Speaker |
+| Host tools | macOS Darwin 27, Python 3.9.6, Pillow 10, numpy 1.24 |
+| Game | Supported `original/` edition, earlier `build/game` output |
 
-## Wyniki (pełny przebieg)
+Full speed (~23 fps) needs about **12000 cycles or more**. At 3000 cycles,
+both the original and smooth versions are too slow. For 1.1.0, start
+`START.COM` or a profile's `1.EXE`, not RUNME.
 
-| Scenariusz | Zakres | Wynik | Sprawdzenia |
-|---|---|---|---|
-| `boot` | Start: menu RUNME → ekran tytułowy → wybór postaci; dźwięk | **zaliczony** | ✔ nagranie powstało — hard_000.avi, 1_000.avi<br>✔ ekran tytułowy wyświetlony (PRES.SQZ) — zgodność 1.000 w t=7.41936 s<br>✔ polski pasek wyboru postaci (CHOIX.SQZ, linie 190-199) — zgodność 1.000 w t=30.89022 s<br>✔ dźwięk/muzyka nagrane (niezerowy sygnał) — RMS 6255, szczyt 32768<br>✔ menu RUNME.COM po polsku |
-| `all_levels` | [łatka testowa] przejście wszystkich 6 poziomów i powrót do wyboru postaci | **zaliczony** | ✔ poziom 1 wczytany i wyświetlony (paleta poziomu)<br>✔ poziom 2 wczytany i wyświetlony (paleta poziomu)<br>✔ poziom 3 wczytany i wyświetlony (paleta poziomu)<br>✔ poziom 4 wczytany i wyświetlony (paleta poziomu)<br>✔ poziom 5 wczytany i wyświetlony (paleta poziomu)<br>✔ poziom 6 wczytany i wyświetlony (paleta poziomu)<br>✔ ikony HUD (klatki 135-144 za poszerzoną klatką 134) poprawne we wszystkich poziomach — p1: 1.000, p2: 1.000, p3: 1.000, p4: 1.000, p5: 1.000, p6: 1.000<br>✔ mapa INTER z polskimi szyldami przed poziomami — 10 wystąpień<br>✔ po ukończeniu poziomu 6 gra wraca do ekranu wyboru postaci — inny -> CHOIX -> inny -> INTER -> inny -> czarny |
-| `gameover` | [łatka testowa] ekran końca gry | **zaliczony** | ✔ sprite "KONIEC GRY" wyświetlony w grze — zgodność 1.000 w (80,77), t=33.116028 s |
-| `mag_store` | [łatka testowa] neon SKLEP w poziomie 1 | **zaliczony** | ✔ SKLEP neon (MAG.CK2 kafle 50-51) — zgodność 1.000 w (160,30), t=32.930544000000005 s |
-| `mag_music` | [łatka testowa] neon PŁYTY w poziomie 1 | **zaliczony** | ✔ PŁYTY neon (MAG.CK2 kafle 96-97) — zgodność 1.000 w (160,30), t=32.930544000000005 s |
-| `mag_mirror` | [łatka testowa] lustrzane neony w pokojach bonusowych | **zaliczony** | ✔ SKLEP odbicie (MAG.CK2 kafle 126-127) — zgodność 1.000 w (96,94), t=32.916276 s<br>✔ PŁYTY odbicie (MAG.CK1 kafle 79+120) — zgodność 1.000 w (160,94), t=32.916276 s |
-| `ville_plaque` | [łatka testowa] tabliczka PROGRAMISTA w poziomie 5 | **zaliczony** | ✔ PROGRAMISTA tabliczka (VILLE.CK1 kafle 114-117) — zgodność 1.000 w (96,110), t=32.844936000000004 s |
-| `insert_disk` | ekran zmiany dyskietki (brak AVTMAG.SQV) | **zaliczony** | ✔ polski ekran "WŁÓŻ DYSK II" — zgodność 1.000 w t=20.545920000000002 s |
-| `runme_ega` | opcja [1] EGA - porównanie z oryginałem | **zaliczony** | ✔ oryginał i wersja PL uruchamiają te same programy — oryginał: ['hard'], PL: ['hard']<br>✔ komunikat po wyjściu przetłumaczony (zrzut: runme_exit_message.png) |
-| `console` | komunikaty konsolowe (RUNME, CGA, brak pamięci [łatka testowa]) | **zaliczony** | ✔ konsola RUNME: runme.line_presents — 'P R Z E D S T A W I A'<br>✔ konsola RUNME: runme.line_title — 'Blues Brothers firmy TITUS'<br>✔ konsola RUNME: runme.line_intro — '[3] - Intro TDT/TRSI...'<br>✔ konsola RUNME: runme.exit_message — 'Kto inny da wam takie rzeczy?'<br>✔ 1.EXE na karcie CGA: 'BRAK EGA/VGA.' — BRAK EGA/VGA.; C:\>exit<br>✔ komunikat nr 1 z tablicy (brak pamięci): 'BRAK RAM-U.' — BRAK RAM-U.; C:\>exit |
-| `demo_regression` | regresja: tryb demo oryginał vs PL (build `--classic-scroll`), klatka po klatce | **zaliczony** | ✔ wszystkie różnice wynikają z lokalizacji (tekst, napisy, neony) — niewyjaśnione: []<br>✔ większość klatek identyczna z oryginałem — 187/390 |
-| `smooth_scroll` | płynne przewijanie: demo poziomu 1 z wersją PL | **zaliczony** | ✔ kamera przesuwa się w poziomie — 201 zmian<br>✔ przesunięcia co piksel (nie tylko wielokrotności 8) — wartości: [-6, -5, -4, -3, -2, -1]<br>✔ brak skoków powyżej 16 px na klatkę — max \|dx\| = 6 |
-| `polish_glyphs` | wszystkie polskie wielkie litery w grze (pangram) | **zaliczony** | ✔ pangram 'ZAŻÓŁĆ GĘŚLĄ' / 'JAŹŃ ĄĆĘŁŃÓŚŹŻ' wyświetlony w grze — zgodność 1.000, t=30.861684 s |
-| `direct_exe` | bezpośrednie uruchomienie 1.EXE | **zaliczony** | ✔ 1.EXE uruchomione bezpośrednio pokazuje polski ekran wyboru — zgodność 1.000, t=28.050888 s |
+## What the historical tests covered
 
-Dodatkowo porównano dźwięk nagrany w scenariuszu regresji dema: korelacja
-obwiedni głośności ścieżek oryginału i wersji PL wynosi 0,988 (przesunięcie
-50 ms wynika z niezsynchronizowanego startu nagrań), RMS 6419 vs 6423 -
-muzyka i efekty nie zostały naruszone (pliki dźwiękowe i kod dźwięku nie są zmieniane).
+The DOSBox-X harness copied the game to a working directory, injected keys
+with `AUTOTYPE`, captured video/audio with `DX-CAPTURE /V /A`, decoded ZMBV
+with `tests/zmbv.py` for exact colors, compared pixels using
+`tests/dosbox_harness.py`, and read DOS output from `-log-con`.
+Some scenarios used **test-only patches**, never shipped to players:
+forced level completion/game over, starting-level/player-position changes,
+bonus-room tiles moved near the start, and swapped error-message entries.
 
-Regresja dema: 390 próbek co 0,25 s; 187 klatek identycznych bit w bit,
-pozostałe różnią się wyłącznie w zlokalizowanych miejscach (menu tekstowe,
-pasek wyboru, szyldy mapy, neony poziomu 1), fazą animacji palety (różnica
-tylko w kanale B) lub w 1 klatce wygaszania. Pozycje postaci, przeciwników
-i przebieg dema są identyczne. Dotyczy to wersji z klasycznym przewijaniem;
-z płynnym przewijaniem demo rozjeżdża się po ok. 60 s (patrz punkt 10 niżej).
+The following were reported as passed **for earlier builds only**:
 
-Pełny raport: `tests/results/latest/report.md`, arkusze klatek
-i zrzuty: `tests/results/latest/*.png`.
+| Historical scenario | Evidence and limits |
+|---|---|
+| `boot`, `direct_exe` | Title screen, Polish character selection, audio and old RUNME menu; direct `1.EXE` startup. |
+| `all_levels` | All six levels, palettes, Polish map, HUD sprites and return to selection, using forced completion. Not a natural playthrough. |
+| `gameover` | KONIEC GRY sprite through a forced drawing branch, not natural loss of all lives. |
+| `mag_store`, `mag_music`, `mag_mirror`, `ville_plaque` | Polish signs and reflections verified pixel-for-pixel using test patches. |
+| `insert_disk` | WŁÓŻ DYSK II prompt with AVTMAG.SQV removed. |
+| `runme_ega`, `console` | Legacy menu/error behavior; the memory error used swapped table entries. Not tests of START.COM. |
+| `demo_regression` | **Original scrolling** (`--classic-scroll`): 187/390 samples identical, no unexplained differences. Does not apply to smooth scrolling. |
+| `smooth_scroll` | Earlier Polish level-1 demo: 201 horizontal camera changes, deltas −6 to −1 px, max absolute delta 6 px. Not four-profile acceptance. |
+| `polish_glyphs` | All nine Polish uppercase letters rendered via a pangram. |
 
-### Testy narzędzi (`tests/test_tools.py`, 12 testów - wszystkie zaliczone)
+The classic-scroll demo comparison used 390 samples at 0.25-second intervals.
+Remaining differences were localized artwork/menu text, palette animation
+or a fade frame; player/enemy positions and demo progression matched.
+Audio-envelope correlation was 0.988 (50 ms start offset), with RMS
+6419 vs 6423. Sound files and sound code are not modified.
 
-Identyfikacja wersji, round-trip 34 skompresowanych zasobów (dekompresja →
-kompresja → dekompresja), round-trip ILBM i SQV, model nadmiaru dekodera DOS,
-schemat `strings.json`, pokrycie znaków fontów, dopasowanie komunikatów do
-dostępnego miejsca, determinizm buildu (dwa buildy → identyczne SHA-256),
-nienaruszalność `original/`, odmowa patchowania zmodyfikowanego pliku,
-paczka dystrybucyjna (instalacja = build, ponowna instalacja, przywracanie,
-odmowa dla obcego pliku, brak plików gry w paczce).
+The earlier documentation also recorded 12 tool tests: version detection,
+round-trip compression of 34 resources, ILBM/SQV, DOS decoder overrun model,
+string schema/font coverage/message limits, deterministic builds, source
+preservation, modified-file rejection and the **old** patch packaging workflow.
+Those are not new-format results. Full historical detail, patch addresses
+and measurements are preserved in [the Polish record](compatibility.pl.md).
+Historical artifacts: `tests/results/latest/report.md` and `*.png`.
 
-## Ograniczenia i znane zachowania
+## Known limitations
 
-1. **Opcja [1] - EGA w menu RUNME nie uruchamia gry** - tak samo w oryginale
-   (sprawdzone testem `runme_ega`); to cecha tego wydania (crack). Gra działa
-   w trybie VGA (`[2]`) i po bezpośrednim uruchomieniu `1.EXE`.
-2. **Komunikaty konsolowe bez polskich znaków** ("BRAK EGA/VGA.", "BRAK
-   RAM-U."). Komunikat o karcie pojawia się na CGA/MDA/Hercules, gdzie font
-   jest w ROM karty - test w DOSBox-X pokazał, że CP852 dałoby tam
-   "B¥ŤD GRAFIKI". Dobrano sformułowania poprawne bez diakrytyków.
-3. **Tabliczka "OPEN"** (kafel 16 px, litery 3x5) pozostała po angielsku -
-   polskie odpowiedniki nie mieszczą się, a zmiana mapy poziomu wykracza poza
-   lokalizację. Oznaczona w `strings.json` jako `review`.
-4. **"+1 ŻYCIE"** - klatka 134 poszerzona do 32 px. Zweryfikowano: poprawne
-   zbudowanie tablicy klatek (ikony HUD z klatek 135-145 wyświetlają się
-   poprawnie we wszystkich poziomach), wyrównanie do szerokości 16 jak w innych
-   klatkach. Samo pojawienie się napisu po zebraniu dodatkowego życia nie
-   zostało wywołane w teście automatycznym - **do ręcznej weryfikacji**.
-5. **Ekran "KONIEC GRY"** sprawdzony przez wymuszenie gałęzi (łatka testowa);
-   naturalna utrata wszystkich żyć - **do ręcznej weryfikacji**.
-6. **Ekran "WŁÓŻ DYSK II"** pojawia się tylko, gdy brakuje `AVTMAG.SQV`
-   (wersja dyskietkowa). Litery zostały odtworzone krojem Superclarendon
-   z proceduralnym stylem grawerowanym (podobnym, ale nie identycznym
-   z ręcznie rysowanym oryginałem).
-7. **Prawdziwy sprzęt** nie był testowany. Zasoby mieszczą się w limitach
-   buforów wyznaczonych z kodu (docs/analysis.md). Kod przewijania jest
-   zmieniony (mods/smooth_scroll): na wolnym 286 gra działałaby wolniej niż
-   oryginał, bo przesunięcie tła o 0-7 px liczy procesor.
-8. Kompresja zasobów różni się bajtowo od oryginału (inne drzewo Huffmana),
-   ale po dekompresji dane są identyczne co do piksela poza napisami;
-   rozmiary plików są zbliżone lub mniejsze.
-9. Cracktro (`INTRO.EXE`, opcja `[3]`) nie jest tłumaczone - to dodatek grupy
-   crackerskiej, nie część gry.
-10. **Płynne przewijanie** (domyślnie włączone) zmienia moment aktywacji
-    przeciwników, więc dema rozjeżdżają się z oryginałem. Regresja dema
-    (`demo_regression`) porównuje dlatego oryginał z buildem
-    `--classic-scroll`, a płynność sprawdza scenariusz `smooth_scroll`.
-    W DOSBox potrzebne jest ok. `cycles=12000` (oryginał ma podobny próg).
-11. **Menu RUNME**: linie nagłówka są wyśrodkowane wcięciem z tabulatorów
-    (długość linii w `RUNME.COM` jest stała, a DOS rozwija TAB do 8 kolumn).
+- **Smooth scrolling:** 1-pixel camera precision in both axes changes enemy
+  activation. Recorded level-1 demos lose sync after about **60 seconds**.
+  Compare gameplay regression with `--scroll original` (alias
+  `--classic-scroll`) and test smooth movement separately. Developer defaults
+  remain Polish + smooth; the release includes all four choices.
+- **Two-player mode, character switching and real hardware are unconfirmed.**
+  CPU-based 0–7 px background shifts may be slower on a slow 286. Resource
+  sizes respect reverse-engineered engine buffers, not hardware certification.
+- **DOS errors use ASCII deliberately:** BRAK EGA/VGA. and BRAK RAM-U.
+  ROM fonts on non-VGA cards did not render CP852 correctly. Normal play
+  requires VGA.
+- **OPEN stays English:** a 16 px tile with 3×5 letters cannot fit the Polish
+  equivalent without changing the map; its translation entry is `review`.
+- **+1 ŻYCIE:** sprite 134 was widened to 32 px with 16 px alignment; the
+  frame table and following HUD sprites were checked, but naturally collecting
+  the extra life still needs a manual check.
+- **KONIEC GRY** was forced by a test patch; natural loss of all lives remains
+  to be checked. The disk prompt's engraved Superclarendon rendering is
+  similar to, not identical to, the original hand-drawn lettering.
+- Resource compression uses a different Huffman tree, so bytes differ while
+  decoded pixels remain unchanged outside localized artwork; sizes are
+  comparable or smaller.
+- **Legacy menu history only:** RUNME's EGA option did not start the game even
+  in the original; VGA/direct `1.EXE` did. The TDT/TRSI `INTRO.EXE` was not
+  translated. RUNME header alignment used tabs with fixed byte lengths.
+  **START.COM bypasses that menu and always launches VGA.**
 
-## Lista kontrolna ręcznej weryfikacji
+## Pending 1.1.0 manual checks
 
-Do wykonania na DOSBox / prawdziwym PC (zaznacz po sprawdzeniu):
+No item below is claimed completed:
 
-- [ ] `RUNME` → menu po polsku ("P R Z E D S T A W I A", "firmy TITUS"),
-      `[2]` uruchamia grę.
-- [ ] Ekran tytułowy, muzyka gra.
-- [ ] Ekran wyboru: "← WYBIERZ POSTAĆ → NACIŚNIJ FIRE, BY GRAĆ" czytelne,
-      wybór Jake/Elwood/obaj strzałkami działa, fire startuje grę.
-- [ ] Mapa: szyldy "CHEMIA" i "SKLEP".
-- [ ] Poziom 1: neony "SKLEP" i "PŁYTY" na fasadach, odbicia w pokojach
-      bonusowych pod sklepem.
-- [ ] Zebranie dodatkowego życia → "+1 ŻYCIE" wyświetla się poprawnie.
-- [ ] Poziom 5, pokój bonusowy (lewy dolny róg mapy): tabliczka
-      "Y.BERTHELOT / PROGRAMISTA".
-- [ ] Utrata wszystkich żyć → "KONIEC GRY", powrót do wyboru postaci.
-- [ ] Przejście gry do koncertu (poziom 6) i powrót do wyboru postaci.
-- [ ] Wyjście z gry → komunikat "Kto inny da wam takie rzeczy?".
-- [ ] (opcjonalnie) usunięcie `AVTMAG.SQV` → ekran "WŁÓŻ DYSK II".
+- [ ] New-directory installation, all 50 source files unchanged, rejection of
+      unsupported sources and existing output directories.
+- [ ] Both launcher languages and both scrolling choices; correct working
+      directories, VGA, no cracktro menu.
+- [ ] All four profiles independently start via `1.EXE`; ENORIG is unchanged,
+      ENSMOOTH changes only `1.EXE` and has no Polish localization.
+- [ ] Title, music, character selection, localized map/signs/reflections/plaque.
+- [ ] Natural extra-life pickup, game over, six-level completion and return.
+- [ ] Pixel-precise movement in both axes, map/foreground edges, separate
+      original-scroll demo regression.
+- [ ] Two-player mode, character switching and real hardware.
+- [ ] Optional missing-AVTMAG.SQV prompt, in a test copy only.

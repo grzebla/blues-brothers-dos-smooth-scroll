@@ -1,45 +1,37 @@
 #!/usr/bin/env python3
-"""Tworzy dystrybucyjny patch polonizacji (bez plików gry).
+"""Buduje cztery warianty i gotową paczkę patcha, bez oryginalnej gry.
 
-Użycie:
-    python tools/make_patch.py --source original --build build/game --output patches/dist [--version 1.0]
+    python tools/make_patch.py --source original --output patches/dist --version 1.1.0
 
-Paczka (katalog + archiwum ZIP) zawiera:
-    apply_patch.py   instalator (Python 3, bez dodatkowych pakietów)
-    bbformats.py     kodek formatów gry (wymagany przez instalator)
-    patch.json       zmiany: bajty tekstów oraz zmienione piksele grafik
-    CZYTAJ.TXT       instrukcja instalacji
-    LICENCJA.TXT     licencje
-
-Format zmian:
-  * 'bytes' - podmiana bajtów (1.EXE, RUNME.COM): tylko nowe, polskie bajty,
-  * 'ilbm'  - zmienione piksele ekranu/arkusza kafli: prostokąt + maska bitowa
-              + wartości wyłącznie zmienionych pikseli,
-  * 'sqv'   - zmienione klatki sprite'ów (piksele zmienione lub nowa klatka).
-Instalator dekompresuje oryginał, nakłada zmiany, ponownie koduje tym samym
-deterministycznym koderem i sprawdza SHA-256 wyniku.
-
-Po utworzeniu paczka jest testowana: instalacja na świeżej kopii oryginału
-musi dać pliki identyczne z buildem, a ponowna instalacja i przywracanie
-kopii muszą działać.
+Wymagania twórcy: Pillow, numpy, nasm. Instalator gracza: tylko Python 3.8+.
 """
 import argparse
 import base64
 import hashlib
 import json
 import os
+from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
 
-TOOLS = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, TOOLS)
+TOOLS = Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOLS))
 import bbformats as bf  # noqa: E402
 import gamedata as gd  # noqa: E402
 
-ROOT = os.path.dirname(TOOLS)
+ROOT = TOOLS.parent
+PROFILES = {
+    'en-original': ('en', 'original', 'ENORIG'),
+    'en-smooth': ('en', 'smooth', 'ENSMOOTH'),
+    'pl-original': ('pl', 'original', 'PLORIG'),
+    'pl-smooth': ('pl', 'smooth', 'PLSMOOTH'),
+}
+PACKAGE_FILES = {'apply_patch.py', 'bbformats.py', 'patch.json', 'START.COM',
+                 'README.txt', 'CZYTAJ.txt', 'LICENSE.txt'}
 
 
 def sha(d):
@@ -67,7 +59,7 @@ def diff_file(name, old, new):
     e = {'source_sha256': sha(old), 'target_sha256': sha(new), 'source_size': len(old), 'target_size': len(new)}
     if name.endswith(('.EXE', '.COM')):
         if len(old) != len(new):
-            raise SystemExit('%s: zmiana długości nieobsługiwana' % name)
+            raise ValueError('%s: zmiana długości nieobsługiwana' % name)
         ops = []
         i = 0
         while i < len(old):
@@ -84,10 +76,14 @@ def diff_file(name, old, new):
     od, nd = bf.unpack(old), bf.unpack(new)
     if od[:4] == b'FORM':
         oi, ni = bf.ILBM.parse(od), bf.ILBM.parse(nd)
+        if (oi.width, oi.height, oi.palette) != (ni.width, ni.height, ni.palette):
+            raise ValueError('%s: zmiana wymiarów/palety nieobsługiwana' % name)
         e.update(method='ilbm', regions=pixel_regions(oi.pixels, ni.pixels, oi.width))
         return e
     of, _ = bf.parse_sqv(od)
     nf, _ = bf.parse_sqv(nd)
+    if len(of) != len(nf):
+        raise ValueError('%s: zmiana liczby klatek nieobsługiwana' % name)
     frames = []
     for i, (a, b) in enumerate(zip(of, nf)):
         if (a['w'], a['h'], a['data']) == (b['w'], b['h'], b['data']):
@@ -103,118 +99,159 @@ def diff_file(name, old, new):
     return e
 
 
-README = """Polska wersja językowa: The Blues Brothers (Titus Interactive, 1991), MS-DOS
-==========================================================================
-Wersja patcha: {version}
+def read_original(source):
+    result = {}
+    for name, (size, checksum) in sorted(gd.KNOWN_FILES.items()):
+        path = gd.find_file(str(source), name)
+        if path is None:
+            raise ValueError('Brak pliku źródłowego: %s' % name)
+        data = Path(path).read_bytes()
+        if len(data) != size or sha(data) != checksum:
+            raise ValueError('%s nie jest obsługiwanym oryginałem' % name)
+        result[name] = data
+    return result
 
-Patch NIE zawiera plików gry. Potrzebna jest legalnie posiadana kopia
-obsługiwanego wydania:
-  {release}
 
-INSTALACJA
-1. Zainstaluj Python 3 (https://www.python.org/) - inne narzędzia nie są potrzebne.
-2. Rozpakuj ten katalog w dowolnym miejscu.
-3. Uruchom w wierszu poleceń:
-       python apply_patch.py C:\\GRY\\BLUES
-   (podaj katalog z plikiem 1.EXE). Sprawdzenie bez zmian: --check
-4. Uruchom grę (np. w DOSBox): RUNME, a w menu wybierz [2] - VGA.
-   W DOSBox ustaw cycles=12000 lub więcej (przy domyślnych 3000 gra jest
-   zbyt wolna, także w oryginale).
+def metadata(data):
+    return {'size': len(data), 'sha256': sha(data)}
 
-PŁYNNE PRZEWIJANIE
-Polska wersja przewija planszę płynnie (co piksel), zamiast skokami po
-16 pikseli jak oryginał. Przeciwnicy budzą się względem kamery, więc
-moment ich pojawiania się może się nieco różnić, a dema w trybie demo
-po pewnym czasie rozjeżdżają się z oryginałem.
 
-Instalator sprawdza sumy SHA-256 każdego pliku i odmawia pracy z innym
-wydaniem. Oryginalne pliki są kopiowane do podkatalogu KOPIA_EN\\.
-Przywrócenie wersji angielskiej:
-       python apply_patch.py C:\\GRY\\BLUES --restore
+def build_profile(source, directory, locale, scroll):
+    subprocess.run([sys.executable, str(TOOLS / 'build.py'), '--source', str(source),
+                    '--locale', locale, '--scroll', scroll, '--output', str(directory)],
+                   cwd=str(ROOT), check=True)
+    return {name: (directory / 'game' / name).read_bytes() for name in gd.KNOWN_FILES}
 
-ZMIENIANE PLIKI
-{files}
 
-Opcja [1] - EGA w menu RUNME tego wydania nie uruchamia gry (tak samo jak
-w oryginale). Opcja [3] uruchamia intro grupy crackerskiej (nietłumaczone).
-"""
+def create_package(source, work, version):
+    original = read_original(source)
+    package = work / ('blues-brothers-%s-patch' % version)
+    package.mkdir()
+    launcher = package / 'START.COM'
+    subprocess.run(['nasm', '-f', 'bin', '-o', str(launcher),
+                    str(ROOT / 'mods' / 'launcher' / 'start.asm')], check=True)
+    patch = {
+        'format_version': 2,
+        'title': 'The Blues Brothers — English/Polski, original/smooth scroll',
+        'version': version,
+        'supported_release': 'English MS-DOS hard-disk TDT/TRSI release; '
+                             '1.EXE 196608 B, SHA-256 ' + gd.KNOWN_FILES['1.EXE'][1],
+        'source': {name: metadata(data) for name, data in original.items()},
+        'launcher': dict(file='START.COM', **metadata(launcher.read_bytes())),
+        'profiles': {},
+    }
+    builds = {}
+    for key, (locale, scroll, directory) in PROFILES.items():
+        files = build_profile(source, work / key, locale, scroll)
+        builds[key] = files
+        patch['profiles'][key] = {
+            'locale': locale, 'scroll': scroll, 'directory': directory,
+            'output': {name: metadata(data) for name, data in files.items()},
+            'files': {name: diff_file(name, original[name], data)
+                      for name, data in sorted(files.items()) if data != original[name]},
+        }
+    (package / 'patch.json').write_text(json.dumps(patch, indent=1, ensure_ascii=False,
+                                                 sort_keys=True) + '\n', encoding='utf-8')
+    shutil.copyfile(TOOLS / 'patcher' / 'apply_patch.py', package / 'apply_patch.py')
+    shutil.copyfile(TOOLS / 'bbformats.py', package / 'bbformats.py')
+    for source_doc, target_doc in [('install.md', 'README.txt'), ('install.pl.md', 'CZYTAJ.txt')]:
+        text = (ROOT / 'docs' / source_doc).read_text(encoding='utf-8')
+        for before, after in [('(install.pl.md)', '(CZYTAJ.txt)'),
+                              ('(install.md)', '(README.txt)'),
+                              ('(../README.md)', '(https://github.com/grzebla/blues-brothers-pl#readme)'),
+                              ('(../README.pl.md)', '(https://github.com/grzebla/blues-brothers-pl/blob/main/README.pl.md)'),
+                              ('(compatibility.md)', '(https://github.com/grzebla/blues-brothers-pl/blob/main/docs/compatibility.md)'),
+                              ('(compatibility.pl.md)', '(https://github.com/grzebla/blues-brothers-pl/blob/main/docs/compatibility.pl.md)')]:
+            text = text.replace(before, after)
+        (package / target_doc).write_text(text.replace('1.1.0', version), encoding='utf-8')
+    shutil.copyfile(ROOT / 'LICENSE', package / 'LICENSE.txt')
+    test_package(package, work, original, builds)
+    return package
+
+
+def test_package(package, work, original, builds):
+    source = work / 'test-source'
+    source.mkdir()
+    for name, data in original.items():
+        (source / name).write_bytes(data)
+    destination = work / 'test-install'
+
+    def run(*args):
+        proc = subprocess.run([sys.executable, '-I', str(package / 'apply_patch.py'), str(source), *args],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        return proc
+
+    result = run('--check')
+    if result.returncode or destination.exists():
+        raise ValueError('Autotest --check: ' + result.stdout)
+    result = run('--output', str(destination))
+    if result.returncode:
+        raise ValueError('Autotest instalacji: ' + result.stdout)
+    for key, (_, _, directory) in PROFILES.items():
+        for name, data in builds[key].items():
+            if (destination / directory / name).read_bytes() != data:
+                raise ValueError('Instalacja różni się od buildu: %s/%s' % (key, name))
+    if run('--output', str(destination)).returncode == 0:
+        raise ValueError('Instalator nadpisał istniejący wynik')
+    for name, data in original.items():
+        if (source / name).read_bytes() != data:
+            raise ValueError('Instalator zmienił źródło: ' + name)
+    # Ten zasób nie jest zmieniany przez żaden profil: kontrolujemy pełną bazę.
+    path = source / 'PRES.SQZ'
+    damaged = bytearray(path.read_bytes())
+    damaged[100] ^= 255
+    path.write_bytes(damaged)
+    if run('--check').returncode == 0:
+        raise ValueError('Instalator zaakceptował obce źródło')
+    if {p.name for p in package.iterdir()} != PACKAGE_FILES:
+        raise ValueError('Nieoczekiwane pliki w dystrybucji')
+    print('Autotest paczki: cztery profile = buildy, źródło nietknięte, odmowa nadpisania/obcej bazy — OK')
+
+
+def write_archive(package, path):
+    with zipfile.ZipFile(path, 'x', zipfile.ZIP_DEFLATED) as archive:
+        for name in sorted(PACKAGE_FILES):
+            info = zipfile.ZipInfo(package.name + '/' + name, date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, (package / name).read_bytes())
+    with zipfile.ZipFile(path) as archive:
+        expected = {package.name + '/' + name for name in PACKAGE_FILES}
+        if set(archive.namelist()) != expected or archive.testzip() is not None:
+            raise ValueError('Błąd weryfikacji ZIP')
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--source', default='original')
-    ap.add_argument('--build', default=os.path.join('build', 'game'))
-    ap.add_argument('--output', default=os.path.join('patches', 'dist'))
-    ap.add_argument('--version', default='1.0')
+    ap.add_argument('--source', type=Path, default=ROOT / 'original')
+    ap.add_argument('--output', type=Path, default=ROOT / 'patches' / 'dist')
+    ap.add_argument('--version', default='1.1.0')
     args = ap.parse_args()
-    name = 'blues-brothers-pl-%s' % args.version
-    out = os.path.join(args.output, name)
-    if os.path.isdir(out):
-        shutil.rmtree(out)
-    os.makedirs(out)
-    patch = {'title': 'The Blues Brothers (DOS) - polonizacja %s' % args.version,
-             'version': args.version,
-             'supported_release': 'The Blues Brothers, MS-DOS, angielska wersja na dysk twardy '
-                                  '(1.EXE 196608 B, SHA-256 769ee254...0add)',
-             'files': {}}
-    for fname in sorted(gd.KNOWN_FILES):
-        old = open(gd.find_file(args.source, fname), 'rb').read()
-        if sha(old) != gd.KNOWN_FILES[fname][1]:
-            raise SystemExit('BŁĄD: %s w %s nie jest oryginałem' % (fname, args.source))
-        new = open(os.path.join(args.build, fname), 'rb').read()
-        if new != old:
-            patch['files'][fname] = diff_file(fname, old, new)
-    with open(os.path.join(out, 'patch.json'), 'w', encoding='utf-8') as f:
-        json.dump(patch, f, indent=1, ensure_ascii=False, sort_keys=True)
-    shutil.copy2(os.path.join(TOOLS, 'patcher', 'apply_patch.py'), out)
-    shutil.copy2(os.path.join(TOOLS, 'bbformats.py'), out)
-    files = '\n'.join('  %-12s %s' % (n, e['method']) for n, e in sorted(patch['files'].items()))
-    with open(os.path.join(out, 'CZYTAJ.TXT'), 'w', encoding='utf-8', newline='\r\n') as f:
-        f.write(README.format(version=args.version, release=patch['supported_release'], files=files))
-    shutil.copy2(os.path.join(ROOT, 'LICENSE'), os.path.join(out, 'LICENCJA.TXT'))
-
-    # --- test paczki na czystej kopii oryginału -----------------------------
-    tmp = tempfile.mkdtemp(prefix='bbpl_')
-    try:
-        game = os.path.join(tmp, 'GRA')
-        shutil.copytree(args.source, game)
-        def run(*extra):
-            return subprocess.run([sys.executable, os.path.join(out, 'apply_patch.py'), game] + list(extra),
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        r = run('--check')
-        assert r.returncode == 0, r.stdout
-        r = run()
-        assert r.returncode == 0, r.stdout
-        for fname in gd.KNOWN_FILES:
-            a = open(os.path.join(game, fname), 'rb').read()
-            b = open(os.path.join(args.build, fname), 'rb').read()
-            assert a == b, 'instalacja: %s różni się od buildu' % fname
-        r = run()
-        assert r.returncode == 0 and 'już spolszczony' in r.stdout, r.stdout
-        r = run('--restore')
-        assert r.returncode == 0, r.stdout
-        for fname in gd.KNOWN_FILES:
-            a = open(os.path.join(game, fname), 'rb').read()
-            assert sha(a) == gd.KNOWN_FILES[fname][1], 'przywracanie: %s' % fname
-        # odmowa dla zmodyfikowanego pliku
-        p = os.path.join(game, 'CHOIX.SQZ')
-        d = bytearray(open(p, 'rb').read())
-        d[100] ^= 0xFF
-        open(p, 'wb').write(d)
-        r = run()
-        assert r.returncode == 1 and 'NIE może' in r.stdout, r.stdout
-        print('Test paczki: instalacja = build, ponowna instalacja, przywrócenie, odmowa dla obcego pliku - OK')
-    finally:
-        shutil.rmtree(tmp)
-
-    zpath = os.path.join(args.output, name + '.zip')
-    with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
-        for fn in sorted(os.listdir(out)):
-            zi = zipfile.ZipInfo(name + '/' + fn, date_time=(2026, 1, 1, 0, 0, 0))
-            zi.compress_type = zipfile.ZIP_DEFLATED
-            z.writestr(zi, open(os.path.join(out, fn), 'rb').read())
-    size = os.path.getsize(zpath)
-    print('Patch: %s (%d B), plików zmienianych: %d' % (zpath, size, len(patch['files'])))
+    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', args.version):
+        ap.error('--version musi mieć postać X.Y.Z')
+    args.source = args.source.resolve()
+    args.output = args.output.resolve()
+    if args.output == args.source or args.source in args.output.parents:
+        ap.error('katalog paczki nie może należeć do oryginalnej gry')
+    args.output.mkdir(parents=True, exist_ok=True)
+    name = 'blues-brothers-%s-patch' % args.version
+    target = args.output / name
+    archive = args.output / (name + '.zip')
+    if target.exists() or archive.exists():
+        ap.error('wydanie już istnieje; podaj nowy --output lub numer wersji (nic nie nadpisano)')
+    with tempfile.TemporaryDirectory(prefix='.bb-release-', dir=str(args.output)) as tmp:
+        work = Path(tmp)
+        package = create_package(args.source, work, args.version)
+        staged_zip = work / (name + '.zip')
+        write_archive(package, staged_zip)
+        checksum = sha(staged_zip.read_bytes())
+        # Przenosimy wyłącznie zweryfikowane pliki dystrybucyjne, nie lokalne buildy.
+        package.rename(target)
+        staged_zip.rename(archive)
+        (args.output / 'SHA256SUMS').write_text('%s  %s\n' % (checksum, archive.name), encoding='ascii')
+    print('Patch: %s (%d B)' % (archive, archive.stat().st_size))
+    print('SHA-256: %s' % checksum)
     return 0
 
 

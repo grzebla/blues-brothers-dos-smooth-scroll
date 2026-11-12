@@ -43,7 +43,12 @@ captures={cap}
 core=normal
 cycles=fixed {cycles}
 [mixer]
+# Testy nie odtwarzają dźwięku na hoście; emulacja i nagranie pozostają aktywne.
+nosound=true
 rate=22050
+[midi]
+# MIDI omija mikser SDL; testowana gra korzysta z OPL, nie wyjścia MIDI hosta.
+mididevice=none
 [sblaster]
 sbtype=sb16
 [speaker]
@@ -80,9 +85,18 @@ def run(game_dir, outdir, keys='', seconds=40, program='RUNME.COM', cycles=20000
     cmd = [dosbox, '-conf', conf, '-fastlaunch', '-nogui', '-nomenu', '-time-limit', str(seconds)]
     if log_con:
         cmd.append('-log-con')   # wyjście konsoli DOS trafia do dosbox.log jako "DOS CON: ..."
-    subprocess.run(cmd,
-                   stdout=log, stderr=subprocess.STDOUT, cwd=outdir, timeout=seconds + 60)
-    log.close()
+    varlock = shutil.which('varlock')
+    if not varlock:
+        log.close()
+        raise RuntimeError('Testy DOSBox-X wymagają Varlock: bezpieczny tryb bez okien i audio')
+    schema_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # Bez fallbacku do widocznego okna: sterowniki dummy są walidowane w schemacie.
+    cmd = [varlock, 'run', '--path', schema_dir, '--inject', 'vars', '--'] + cmd
+    try:
+        subprocess.run(cmd, check=True,
+                       stdout=log, stderr=subprocess.STDOUT, cwd=outdir, timeout=seconds + 60)
+    finally:
+        log.close()
     return Recording(outdir)
 
 

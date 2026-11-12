@@ -1,51 +1,96 @@
-# Mod: płynne przewijanie
+# Smooth-scroll mod
 
-Oryginalna wersja DOS przewija ekran seriami skoków po 16 px. Gdy postać
-dojdzie do krawędzi, kamera „dojeżdża” o pół ekranu. Ten mod zmienia
-kamerę tak, żeby podążała za postacią na bieżąco:
+[Polski](README.pl.md) · [Project overview](../../README.md)
 
-- **poziomo** kamera przesuwa się co 1 px. Tło jest składane z kafli
-  z dokładnością do bajtu (8 px), a resztę, 0–7 px, robi przesunięcie
-  bitowe. Martwa strefa to x 128–192 na ekranie;
-- **pionowo** przesuwa się co 1 px. Martwa strefa to y 88–136;
-- ruch kamery jest ograniczony do 16 px na klatkę, tak jak w oryginale.
+The original DOS game scrolls in bursts of 16 px, moving the camera roughly
+half a screen when the player reaches the edge. This mod follows the player
+continuously, with **1-pixel precision in both axes**:
 
-Płynne przewijanie jest częścią polskiej wersji: `tools/build.py` nakłada je
-zawsze, a patch dla graczy zawiera zmienione bajty. Przełącznik
-`--classic-scroll` służy wyłącznie testom (regresja dema). Mod można też
-nałożyć osobno, np. na 1.EXE wersji angielskiej (sprawdza bajty tylko
-w miejscach, które zmienia):
+- Horizontal dead zone: screen x=128–192. Tiles are composed on an 8 px byte
+  boundary, then shifted by the remaining 0–7 px.
+- Vertical dead zone: y=88–136; movement is also pixel-precise.
+- Camera movement is capped at 16 px per frame, as in the original.
+
+## Play in English or Polish
+
+Use the **1.1.0 release patch**, not a developer build:
+[installation](../../docs/install.md). It requires only Python 3.8+ for the
+installer and your own supported English DOS hard-disk TDT/TRSI game.
+All 50 `KNOWN_FILES` are validated; matching just `1.EXE` is not enough.
+The base EXE is 196608 bytes, SHA-256
+`769ee254b154a9444205524ec4b28a8147a372ac5b2cee2e25fcd83aa90d0add`.
+
+Install into a new, nonexistent output directory whose parent already exists:
 
 ```sh
-python3 mods/smooth_scroll/apply.py WEJŚCIE.EXE WYJŚCIE.EXE   # wymaga nasm
+python apply_patch.py SOURCE --check
+python apply_patch.py SOURCE --output NEW_DIR
 ```
 
-Test w DOSBox-X: `python3 tests/run_dosbox_tests.py --only smooth_scroll`.
+The source stays untouched. The output contains `START.COM` and four complete
+profiles: `ENORIG`, `ENSMOOTH`, `PLORIG`, `PLSMOOTH`. In `START.COM`, choose
+English → Smooth scroll, or enter `ENSMOOTH` and run `1.EXE` directly.
+**English smooth modifies only `1.EXE`; there are no Polish text, graphics or
+fonts.** Polish → Płynne przewijanie selects `PLSMOOTH`. Both original-scroll
+profiles remain available. All choices launch VGA without the old cracktro
+menu. There is no `--variant` option and no new-format `--restore`.
 
-## Jak to działa
+## Developer build
 
-| Miejsce | Oryginał | Mod |
+For clone setup and dependencies (Pillow, numpy, NASM), see the
+[main README](../../README.md#build-from-a-clone-developers-only).
+The mod can be built independently of Polish localization:
+
+```sh
+python3 tools/build.py --source original --locale en --scroll smooth --output build/en-smooth
+python3 tools/build.py --source original --locale pl --scroll smooth --output build/pl-smooth
+```
+
+Defaults remain Polish + smooth. Use `--scroll original` to disable the mod;
+`--classic-scroll` remains an alias, not a test-only restriction.
+For low-level development only, the EXE patcher checks bytes at its change
+sites, not the full 50-file base validated by the release installer:
+
+```sh
+python3 mods/smooth_scroll/apply.py INPUT.EXE OUTPUT.EXE
+```
+
+This requires NASM and is not a claim of support for other editions.
+
+## Implementation map
+
+| Location | Original | Mod |
 |---|---|---|
-| `01DC:145F` | kroki po 16 px wg maski `[2886]` ustawianej w `0739:0C7C` | `camera` — śledzenie gracza (obiekt 39/40, pola `+12h`/`+16h`) |
-| `01DC:1502` | składanie widoku z pierścieniowego bufora kafli w VRAM `4000h` (4 prostokąty, `0AB2:011D`) | `redraw` — co klatkę cały widok z mapy, kopie przez zatrzaski VGA z arkuszy `6000h`/`8000h`; przy kamerze X niepodzielnej przez 8 widok 41 B/linię trafia do `4000h`, a `shift` przesuwa go bitowo na stronę |
-| `003A:0C15` | lista kafli pierwszego planu w siatce ekranu (kamera wyrównana do 16 px) | lista w układzie świata, pozycja kodowana dla `fgblit` |
-| `0351:19CB` | `0B8F:0008` — kafel 16x16 bez przycinania | `fgblit` — przesunięcie bitowe i przycinanie na krawędziach widoku |
-| `0B8F:0152` | zapis kafla do bufora pierścieniowego | `retf` (obszar `4000h` jest buforem składania) |
+| `01DC:145F` | 16 px steps using mask `[2886]` set in `0739:0C7C` | `camera`: tracks player object 39/40, fields `+12h`/`+16h` |
+| `01DC:1502` | VRAM `4000h` ring-buffer view, four rectangles via `0AB2:011D` | `redraw`: whole view each frame, VGA latch copies from tile sheets `6000h`/`8000h`; unaligned X uses a 41-byte row in `4000h`, then `shift` bit-shifts it onto the page |
+| `003A:0C15` | Foreground tile list on a 16 px screen grid | World-coordinate list encoded for `fgblit` |
+| `0351:19CB` | `0B8F:0008`: unclipped 16×16 tile | `fgblit`: bit shifting and viewport-edge clipping |
+| `0B8F:0152` | Write a tile into the ring buffer | `retf`; `4000h` is now the composition buffer |
 
-Kod jest w `seg01dc.asm`, w trzech sekcjach w miejscach zastąpionego kodu
-segmentu 01DC (procedury bufora pierścieniowego, krok kamery, składanie
-widoku), oraz w `seg003a.asm`. Relokacje z nadpisanych obszarów są
-przekierowane na nieużywane słowo `reloc_scratch`.
+`seg01dc.asm` replaces three sections of segment 01DC (ring-buffer routines,
+camera step, view composition); `seg003a.asm` replaces the foreground list.
+Relocations in overwritten areas are redirected to unused `reloc_scratch`
+so the DOS loader does not overwrite the new code. Project-authored scrolling
+code and relocation changes are included in the patch; see [LICENSE](../../LICENSE).
 
-## Znane skutki uboczne
+## Side effects and test status
 
-- **Dema tracą synchronizację.** Przeciwnicy aktywują się względem kamery,
-  więc nagrane sterowanie (`DEMO*.BIN`) po pewnym czasie przestaje pasować
-  do sytuacji na ekranie. W demie poziomu 1 widać to po ok. 60 s.
-- **Wymagania CPU.** Przesunięcie bitowe kosztuje ok. 25 tys. bajtów na
-  klatkę. W DOSBox-X przy `cycles=12000` gra ma pełne ~23 klatki/s, tak jak
-  oryginał. Przy 3000 oba są za wolne: oryginał ok. 12, mod ok. 10 kl./s.
-  Sprzętowy pel panning odpadł, bo przesuwałby paski HUD, a gra rysuje je
-  tylko przy zmianie.
-- Nie przetestowano jeszcze trybu dwóch graczy ani przełączania postaci
-  (`[288D]`).
+- Enemies activate relative to the camera. Recorded `DEMO*.BIN` input loses
+  sync; the level-1 demo diverges after about **60 seconds**.
+- CPU shifting processes about 25 KB per frame. Historical DOSBox-X results
+  reached ~23 fps at 12000 cycles; at 3000, the original was ~12 fps and the
+  mod ~10 fps. Hardware pel panning would also move the HUD, which is only
+  redrawn when it changes.
+- Recommended/tested emulator settings: **DOSBox-X 2026.01.02**,
+  `machine=svga_s3`, `memsize=16`, `core=normal`, `cycles=fixed 20000`.
+- **Two-player mode, character switching (`[288D]`) and real hardware remain
+  unconfirmed.**
+- Release 1.1.0 level-1 camera tests passed in **both languages**: 200 horizontal
+  changes in Polish, 201 in English; deltas −6 to −1 px, maximum absolute delta
+  6 px. These sample a recorded demo, not a natural playthrough or a two-player
+  test. See the [English report](../../tests/results/release-1.1.0-en/report.md),
+  [Polish engine report](../../tests/results/release-1.1.0-engine/report.md)
+  and [compatibility](../../docs/compatibility.md).
+- Automated DOSBox-X tests require Varlock and run with SDL dummy video/audio:
+  no host windows, focus changes or audible output. Captured audio remains
+  available for assertions; the game distributed to players is not muted.

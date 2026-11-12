@@ -1,0 +1,27 @@
+[
+ {
+  "scenario": "smooth_scroll",
+  "ok": true,
+  "checks": [
+   {
+    "check": "kamera przesuwa się w poziomie",
+    "ok": true,
+    "detail": "201 zmian"
+   },
+   {
+    "check": "przesunięcia co piksel (nie tylko wielokrotności 8)",
+    "ok": true,
+    "detail": "wartości: [-6, -5, -4, -3, -2, -1]"
+   },
+   {
+    "check": "brak skoków powyżej 16 px na klatkę",
+    "ok": true,
+    "detail": "max |dx| = 6"
+   }
+  ],
+  "notes": [
+   "przesunięcia poziome (px): [-6, -5, -4, -3, -2, -1]",
+   "czas: 120 s"
+  ]
+ }
+]

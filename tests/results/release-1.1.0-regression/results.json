@@ -1,0 +1,22 @@
+[
+ {
+  "scenario": "demo_regression",
+  "ok": true,
+  "checks": [
+   {
+    "check": "wszystkie różnice wynikają z lokalizacji (tekst, napisy, neony)",
+    "ok": true,
+    "detail": "niewyjaśnione: []"
+   },
+   {
+    "check": "większość klatek identyczna z oryginałem",
+    "ok": true,
+    "detail": "200/391"
+   }
+  ],
+  "notes": [
+   "klasyfikacja klatek: identyczne=200, menu tekstowe=13, pasek CHOIX=94, szyldy INTER=46, neony poziomu 1=37, przejście/zanikanie=1, animacja palety=0, NIEWYJAŚNIONE=0",
+   "czas: 349 s"
+  ]
+ }
+]
